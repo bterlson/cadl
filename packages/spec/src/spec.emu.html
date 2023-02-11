@@ -282,9 +282,9 @@ Statement :
     UsingStatement
     EnumStatement
     AliasStatement
-    AugmentDecoratorStatement
     DecoratorDeclarationStatement
     FunctionDeclarationStatement
+    ExpressionStatement
     `;`
 
 UsingStatement :
@@ -433,15 +433,44 @@ IntersectionExpressionOrHigher :
     `&`? IntersectionExpressionOrHigher `&` ArrayExpressionOrHigher
 
 ArrayExpressionOrHigher :
-    PrimaryExpression
+    InstantiationExpressionOrHigher
     ArrayExpressionOrHigher `[` `]`
+
+InstantiationExpressionOrHigher :
+    CallExpressionOrHigher
+    InstantiationExpression TemplateArguments
+    InstantiationExpression TemplateArguments `.` Identifier
+    InstantiationExpression TemplateArguments `::` Identifier
+
+CallExpressionOrHigher :
+    MemberExpression
+    CallExpression CallArguments
+    CallExpression CallArguments `.` Identifier
+    CallExpression CallArguments `::` Identifier
+
+CallExpression :
+    MemberExpression CallArguments
+
+CallArguments :
+    `(` ExpressionList? `)`
+
+MemberExpressionOrHigher :
+    PrimaryExpression
+    MemberExpression `.` Identifier
+    MemberExpression `::` Identifier
 
 PrimaryExpression :
     Literal
-    ReferenceExpression
     ParenthesizedExpression
     ModelExpression
     TupleExpression
+    AugmentDecoratorExpression
+
+AugmentDecoratorExpression :
+    `@@` IdentifierOrMemberExpression DecoratorArguments?
+
+AugmentDecoratorArguments :
+  `(` ExpressionList `)`
 
 Literal :
     StringLiteral
@@ -487,13 +516,6 @@ Decorator :
 DecoratorArguments :
     `(` ExpressionList? `)`
 
-AugmentDecoratorStatement :
-    `@@` IdentifierOrMemberExpression DecoratorArguments?
-
-AugmentDecoratorArguments :
-  `(` ExpressionList `)`
-
-
 DecoratorDeclarationStatement :
   DecoratorModifiers? `dec` `(` FunctionParameterList? `)`
 
@@ -502,6 +524,9 @@ DecoratorModifiers:
 
 FunctionDeclarationStatement :
   FunctionModifiers? `fn` `(` FunctionParameterList? `)` TypeAnnotation?
+
+ExpressionStatement:
+    Expression `;`
 
 TypeAnnotation:
   `:` Expression
