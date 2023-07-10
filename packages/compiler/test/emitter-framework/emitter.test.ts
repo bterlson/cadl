@@ -11,6 +11,8 @@ import {
   Type,
   Union,
 } from "../../src/core/index.js";
+import { Mutators } from "../../src/core/mutators.js";
+import { Realm } from "../../src/core/realm.js";
 import {
   ArrayBuilder,
   AssetEmitter,
@@ -87,7 +89,7 @@ class SingleFileEmitter extends TypeScriptInterfaceEmitter {
   }
 }
 
-async function emitTypeSpecToTs(code: string) {
+async function emitTypeSpecToTs(code: string, Emitter: any = SingleFileEmitter) {
   const emitter = await emitTypeSpec(SingleFileEmitter, code, {}, false);
 
   const sf = await emitter.getProgram().host.readFile("./tsp-output/output.ts");
@@ -493,6 +495,47 @@ describe("emitter-framework: typescript emitter", () => {
     const contents = (await host.compilerHost.readFile("tsp-output/output.ts")).text;
     assert.match(contents, /prop: Foo/);
     assert.match(contents, /prop: Baz/);
+  });
+
+  it.only("works with realms", async () => {
+    class AlwaysUpdate extends SingleFileEmitter {
+      operationDeclarationContext(operation: Operation, name: string): Context {
+        realm.clone(operation);
+        this.emitter.setRealm(realm);
+        return {};
+      }
+    }
+
+    const testCode = `
+      model Foo {
+        @visibility("read") id: string;
+        required: string;
+        bars?: Bar[];
+      }
+
+      model Bar {
+        @visibility("read") id: string;
+        required: string;
+        x?: string;
+      }
+
+      op updateFoo(item: Foo): void;
+    `;
+    const host = await getHostForTypeSpecFile(testCode);
+    const realm = new Realm(host.program, "update and merge", [
+      Mutators.Visibility.update,
+      Mutators.JSONMergePatch,
+    ]);
+
+    const emitter = createAssetEmitter(host.program, AlwaysUpdate, {
+      emitterOutputDir: host.program.compilerOptions.outputDir!,
+      options: {},
+    } as any);
+    emitter.emitProgram();
+    await emitter.writeOutput();
+    const contents = (await host.compilerHost.readFile("tsp-output/output.ts")).text;
+
+    console.log(contents);
   });
 });
 

@@ -5,9 +5,11 @@ import {
   joinPaths,
   Model,
   Namespace,
+  Operation,
   Program,
   Type,
 } from "../core/index.js";
+import { Realm } from "../core/realm.js";
 import { CustomKeyMap } from "./custom-key-map.js";
 import { Placeholder } from "./placeholder.js";
 import { TypeEmitter } from "./type-emitter.js";
@@ -45,7 +47,7 @@ export function createAssetEmitter<T, TOptions extends object>(
   const typeId = CustomKeyMap.objectKeyer();
   const contextId = CustomKeyMap.objectKeyer();
   const entryId = CustomKeyMap.objectKeyer();
-
+  const realmKey = CustomKeyMap.objectKeyer();
   // This is effectively a seen set, ensuring that we don't emit the same
   // type with the same context twice. So the map stores a triple of:
   //
@@ -56,23 +58,28 @@ export function createAssetEmitter<T, TOptions extends object>(
   // Note that in order for this to work, context needs to be interned so
   // contexts with the same values inside are treated as identical in the
   // map. See createInterner for more details.
-  const typeToEmitEntity = new CustomKeyMap<[string, Type, ContextState], EmitEntity<T>>(
-    ([method, type, context]) => {
-      return `${method}-${typeId.getKey(type)}-${contextId.getKey(context)}`;
-    }
-  );
+  const typeToEmitEntity = new CustomKeyMap<
+    [string, Type, ContextState, Realm | null],
+    EmitEntity<T>
+  >(([method, type, context, realm]) => {
+    return `${method}-${typeId.getKey(type)}-${contextId.getKey(context)}-${
+      realm === null ? "null" : realmKey.getKey(realm)
+    }`;
+  });
 
   // When we encounter a circular reference, this map will hold a callback
   // that should be called when the circularly referenced type has completed
   // its emit.
   const waitingCircularRefs = new CustomKeyMap<
-    [string, Type, ContextState],
+    [string, Type, ContextState, Realm | null],
     {
       state: EmitterState;
       cb: (entity: EmitEntity<T>) => EmitEntity<T>;
     }[]
-  >(([method, type, context]) => {
-    return `${method}-${typeId.getKey(type)}-${contextId.getKey(context)}`;
+  >(([method, type, context, realm]) => {
+    return `${method}-${typeId.getKey(type)}-${contextId.getKey(context)}-${
+      realm === null ? "null" : realmKey.getKey(realm)
+    }`;
   });
 
   // Similar to `typeToEmitEntity`, this ensures we don't recompute context
@@ -110,6 +117,8 @@ export function createAssetEmitter<T, TOptions extends object>(
   const stateInterner = createInterner();
   const stackEntryInterner = createInterner();
 
+  let currentRealm: Realm | null = null;
+
   const assetEmitter: AssetEmitter<T, TOptions> = {
     getContext() {
       return {
@@ -126,6 +135,9 @@ export function createAssetEmitter<T, TOptions extends object>(
       return program;
     },
 
+    setRealm(realm: Realm | null) {
+      currentRealm = realm;
+    },
     result: {
       declaration(name, value) {
         const scope = currentScope();
@@ -206,6 +218,7 @@ export function createAssetEmitter<T, TOptions extends object>(
           state: {
             lexicalTypeStack,
             context,
+            realm: currentRealm,
           },
           cb: (entity) => invokeReference(this, entity),
         });
@@ -302,42 +315,8 @@ export function createAssetEmitter<T, TOptions extends object>(
     },
 
     emitType(type) {
-      const declName =
-        isDeclaration(type) && type.kind !== "Namespace" ? typeEmitter.declarationName(type) : null;
       const key = typeEmitterKey(type);
-      let args: any[];
-      switch (key) {
-        case "scalarDeclaration":
-        case "scalarInstantiation":
-        case "modelDeclaration":
-        case "modelInstantiation":
-        case "operationDeclaration":
-        case "interfaceDeclaration":
-        case "interfaceOperationDeclaration":
-        case "enumDeclaration":
-        case "unionDeclaration":
-        case "unionInstantiation":
-          args = [declName];
-          break;
-
-        case "arrayDeclaration":
-          const arrayDeclElement = (type as Model).indexer!.value;
-          args = [declName, arrayDeclElement];
-          break;
-        case "arrayLiteral":
-          const arrayLiteralElement = (type as Model).indexer!.value;
-          args = [arrayLiteralElement];
-          break;
-        case "intrinsic":
-          args = [declName];
-          break;
-        default:
-          args = [];
-      }
-
-      const result = (invokeTypeEmitter as any)(key, type, ...args);
-
-      return result;
+      return (invokeTypeEmitter as any)(key, type);
     },
 
     emitProgram(options) {
@@ -399,11 +378,11 @@ export function createAssetEmitter<T, TOptions extends object>(
     },
 
     emitOperationParameters(operation) {
-      return invokeTypeEmitter("operationParameters", operation, operation.parameters);
+      return invokeTypeEmitter("operationParameters", operation);
     },
 
     emitOperationReturnType(operation) {
-      return invokeTypeEmitter("operationReturnType", operation, operation.returnType);
+      return invokeTypeEmitter("operationReturnType", operation);
     },
 
     emitInterfaceOperations(iface) {
@@ -411,13 +390,7 @@ export function createAssetEmitter<T, TOptions extends object>(
     },
 
     emitInterfaceOperation(operation) {
-      const name = typeEmitter.declarationName(operation);
-      if (name === undefined) {
-        // the general approach of invoking the expression form doesn't work here
-        // because typespec doesn't have operation expressions.
-        compilerAssert(false, "Unnamed operations are not supported");
-      }
-      return invokeTypeEmitter("interfaceOperationDeclaration", operation, name);
+      return invokeTypeEmitter("interfaceOperationDeclaration", operation);
     },
 
     emitEnumMembers(en) {
@@ -450,15 +423,20 @@ export function createAssetEmitter<T, TOptions extends object>(
    */
   function invokeTypeEmitter<TMethod extends TypeEmitterMethod>(
     method: TMethod,
-    ...args: Parameters<TypeEmitter<T, TOptions>[TMethod]>
+    type: Type
   ): EmitEntity<T> {
-    const type = args[0];
     let entity: EmitEntity<T>;
-    let emitEntityKey: [string, Type, ContextState];
+    let emitEntityKey: [string, Type, ContextState, Realm | null];
     let cached = false;
+    const realmType = currentRealm ? currentRealm.map(type) : type;
+    // todo: handle deleted type
+    const args = getTypeEmitterArgs(method, realmType!);
 
     withTypeContext(method, args, () => {
-      emitEntityKey = [method, type, context];
+      // todo: handle deleted type
+      // have to get the realm type again because context might have set the realm.
+      const realmType = currentRealm ? currentRealm.map(type)! : type;
+      emitEntityKey = [method, realmType, context, currentRealm];
       const seenEmitEntity = typeToEmitEntity.get(emitEntityKey);
 
       if (seenEmitEntity) {
@@ -511,6 +489,50 @@ export function createAssetEmitter<T, TOptions extends object>(
     }
   }
 
+  function getTypeEmitterArgs<TMethod extends TypeEmitterMethod>(
+    key: TMethod,
+    type: Type
+  ): Parameters<TypeEmitter<T, TOptions>[TMethod]> {
+    const declName =
+      isDeclaration(type) && type.kind !== "Namespace" ? typeEmitter.declarationName(type) : null;
+
+    let args: any[];
+    switch (key) {
+      case "scalarDeclaration":
+      case "scalarInstantiation":
+      case "modelDeclaration":
+      case "modelInstantiation":
+      case "operationDeclaration":
+      case "interfaceDeclaration":
+      case "interfaceOperationDeclaration":
+      case "enumDeclaration":
+      case "unionDeclaration":
+      case "unionInstantiation":
+        args = [declName];
+        break;
+
+      case "arrayDeclaration":
+        const arrayDeclElement = (type as Model).indexer!.value;
+        args = [declName, arrayDeclElement];
+        break;
+      case "arrayLiteral":
+        const arrayLiteralElement = (type as Model).indexer!.value;
+        args = [arrayLiteralElement];
+        break;
+      case "intrinsic":
+        args = [declName];
+        break;
+      case "operationReturnType":
+        args = [(type as Operation).returnType];
+        break;
+      case "operationParameters":
+        args = [(type as Operation).parameters];
+        break;
+      default:
+        args = [];
+    }
+    return [type, ...args] as Parameters<TypeEmitter<T, TOptions>[TMethod]>;
+  }
   /**
    * This helper takes a type and sets the `context` state to what it should
    * be in order to invoke the type emitter method for that type. This needs
@@ -519,8 +541,10 @@ export function createAssetEmitter<T, TOptions extends object>(
    */
   function setContextForType<TMethod extends TypeEmitterMethod>(
     method: TMethod,
-    args: Parameters<TypeEmitter<T, TOptions>[TMethod]>
+    rawArgs: Parameters<TypeEmitter<T, TOptions>[TMethod]>
   ) {
+    const args: Parameters<TypeEmitter<T, TOptions>[TMethod]> = [...rawArgs];
+    args[0] = currentRealm ? currentRealm.map(args[0])! : args[0];
     const type = args[0];
     let newTypeStack: LexicalTypeStackEntry[];
 
@@ -639,27 +663,33 @@ export function createAssetEmitter<T, TOptions extends object>(
   ) {
     const oldContext = context;
     const oldTypeStack = lexicalTypeStack;
+    const oldRealm = currentRealm;
 
     setContextForType(method, args);
     cb();
 
     context = oldContext;
     lexicalTypeStack = oldTypeStack;
+    currentRealm = oldRealm;
   }
 
   /**
    * Invoke the callback with the given context.
    */
   function withContext(newContext: EmitterState, cb: () => void) {
-    const oldContext = newContext.context;
-    const oldTypeStack = newContext.lexicalTypeStack;
+    const oldContext = context;
+    const oldTypeStack = lexicalTypeStack;
+    const oldRealm = currentRealm;
+
     context = newContext.context;
     lexicalTypeStack = newContext.lexicalTypeStack;
+    currentRealm = newContext.realm;
 
     cb();
 
     context = oldContext;
     lexicalTypeStack = oldTypeStack;
+    currentRealm = oldRealm;
   }
 
   function typeEmitterKey(type: Type) {
@@ -744,6 +774,9 @@ export function createAssetEmitter<T, TOptions extends object>(
  * @returns
  */
 function isDeclaration(type: Type): type is TypeSpecDeclaration | Namespace {
+  if (!type) {
+    debugger;
+  }
   switch (type.kind) {
     case "Namespace":
     case "Interface":

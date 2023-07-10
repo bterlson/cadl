@@ -3,6 +3,7 @@ import { TypeEmitter } from "../emitter-framework/type-emitter.js";
 import { AssetEmitter } from "../emitter-framework/types.js";
 import { ModuleResolutionResult } from "./module-resolver.js";
 import { Program } from "./program.js";
+import { Realm } from "./realm.js";
 
 // prettier-ignore
 export type MarshalledValue<Type>  = 
@@ -1870,6 +1871,8 @@ export type TypeListeners = UnionToIntersection<ListenerForType<Type>>;
 
 export type SemanticNodeListener = {
   root?: (context: Program) => void | undefined;
+  type?: TypeListener<Type>;
+  exitType?: TypeListener<Type>;
 } & TypeListeners;
 
 export type DiagnosticReportWithoutTarget<
@@ -2091,6 +2094,10 @@ export interface DecoratorContext {
   decoratorTarget: DiagnosticTarget;
 
   /**
+   * The realm to apply the decorator state within.
+   */
+  realm?: Realm;
+  /**
    * Function that can be used to retrieve the target for a parameter at the given index.
    * @param paramIndex Parameter index in the typespec
    * @example @foo("bar", 123) -> $foo(context, target, arg0: string, arg1: number);
@@ -2109,6 +2116,13 @@ export interface DecoratorContext {
     target: T,
     ...args: A
   ): R;
+}
+
+export type StateContext = Program | StateContextRecord;
+
+export interface StateContextRecord {
+  program: Program,
+  realm?: Realm
 }
 
 export interface EmitContext<TOptions extends object = Record<string, never>> {

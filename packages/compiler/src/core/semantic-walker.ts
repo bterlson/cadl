@@ -336,13 +336,17 @@ function navigateDecoratorDeclaration(type: Decorator, context: NavigationContex
 }
 
 function navigateTypeInternal(type: Type, context: NavigationContext) {
+  context.emit("type", type);
   switch (type.kind) {
     case "Model":
-      return navigateModelType(type, context);
+      navigateModelType(type, context);
+      break;
     case "Scalar":
-      return navigateScalarType(type, context);
+      navigateScalarType(type, context);
+      break;
     case "ModelProperty":
-      return navigateModelTypeProperty(type, context);
+      navigateModelTypeProperty(type, context);
+      break;
     case "Namespace":
       return navigateNamespaceType(type, context);
     case "Interface":
@@ -377,6 +381,11 @@ function navigateTypeInternal(type: Type, context: NavigationContext) {
       const _assertNever: never = type;
       return;
   }
+
+  context.emit("type", type);
+
+  return;
+
 }
 
 // Return property from type, nesting into baseTypes as needed.

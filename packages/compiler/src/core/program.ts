@@ -24,6 +24,7 @@ import { CompilerOptions } from "./options.js";
 import { isImportStatement, parse, parseStandaloneTypeReference } from "./parser.js";
 import { getDirectoryPath, joinPaths, resolvePath } from "./path-utils.js";
 import { createProjector } from "./projector.js";
+import { createTypeFactory } from "./type-factory.js";
 import {
   CompilerHost,
   Diagnostic,
@@ -45,6 +46,8 @@ import {
   ProjectionApplication,
   Projector,
   SourceFile,
+  StateContext,
+  StateContextRecord,
   Sym,
   SymbolFlags,
   SymbolTable,
@@ -84,6 +87,7 @@ export interface Program {
   literalTypes: Map<string | number | boolean, LiteralType>;
   host: CompilerHost;
   tracer: Tracer;
+  typeFactory: ReturnType<typeof createTypeFactory>;
   trace(area: string, message: string): void;
   checker: Checker;
   emitters: EmitterRef[];
@@ -99,10 +103,8 @@ export interface Program {
   reportDiagnostic(diagnostic: Diagnostic): void;
   reportDiagnostics(diagnostics: readonly Diagnostic[]): void;
   reportDuplicateSymbols(symbols: SymbolTable | undefined): void;
-
   getGlobalNamespaceType(): Namespace;
   resolveTypeReference(reference: string): [Type | undefined, readonly Diagnostic[]];
-
   /** Return location context of the given source file. */
   getSourceFileLocationContext(sourceFile: SourceFile): LocationContext;
 
@@ -305,6 +307,7 @@ export async function compile(
     resolveTypeReference,
     getSourceFileLocationContext,
     projectRoot: getDirectoryPath(options.config ?? resolvedMain ?? ""),
+    typeFactory: undefined!,
   };
 
   trace("compiler.options", JSON.stringify(options, null, 2));
@@ -365,6 +368,7 @@ export async function compile(
   }
   program.checker = createChecker(program);
   program.checker.checkProgram();
+  program.typeFactory = createTypeFactory(program);
 
   if (program.hasError()) {
     return program;
@@ -1209,6 +1213,20 @@ export function createStateAccessors(
   return { stateMap, stateSet };
 }
 
+export function state(context: StateContext, stateKey: symbol) {
+  const { program, realm }: StateContextRecord = isStateContext(context)
+    ? context
+    : { program: context };
+  if (realm) {
+    return realm.stateMap(stateKey);
+  }
+
+  return program.stateMap(stateKey);
+}
+
+function isStateContext(object: unknown): object is StateContextRecord {
+  return typeof object === "object" && object !== null && "program" in object;
+}
 /**
  * Resolve compiler options from input options.
  */

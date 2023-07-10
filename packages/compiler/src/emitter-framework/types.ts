@@ -11,6 +11,7 @@ import {
   Type,
   Union,
 } from "../core/index.js";
+import { Realm } from "../core/realm.js";
 import { Placeholder } from "./placeholder.js";
 import { TypeEmitter } from "./type-emitter.js";
 type AssetEmitterOptions<TOptions extends object> = {
@@ -57,6 +58,8 @@ export interface AssetEmitter<T, TOptions extends object = Record<string, unknow
     none(): NoEmit;
   };
   writeOutput(): Promise<void>;
+
+  setRealm(realm: Realm): void;
 }
 
 export interface ScopeBase<T> {
@@ -130,7 +133,7 @@ export class NoEmit extends EmitterResult {
 
 export class CircularEmit extends EmitterResult {
   public kind = "circular" as const;
-  constructor(public emitEntityKey: [string, Type, ContextState]) {
+  constructor(public emitEntityKey: [string, Type, ContextState, Realm | null]) {
     super();
   }
 }
@@ -183,4 +186,5 @@ export interface LexicalTypeStackEntry {
 export interface EmitterState {
   lexicalTypeStack: LexicalTypeStackEntry[];
   context: ContextState;
+  realm: Realm | null;
 }

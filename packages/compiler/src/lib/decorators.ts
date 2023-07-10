@@ -14,7 +14,7 @@ import {
   validateDecoratorUniqueOnNode,
 } from "../core/index.js";
 import { createDiagnostic, reportDiagnostic } from "../core/messages.js";
-import { Program, ProjectedProgram } from "../core/program.js";
+import { Program, ProjectedProgram, state } from "../core/program.js";
 import {
   ArrayModelType,
   DecoratorContext,
@@ -103,18 +103,18 @@ export function $doc(context: DecoratorContext, target: Type, text: string, sour
   if (sourceObject) {
     text = replaceTemplatedStringFromProperties(text, sourceObject);
   }
-  setDocData(context.program, target, { value: text, source: "@doc" });
+  setDocData(context, target, { value: text, source: "@doc" });
 }
 
 /**
  * @internal to be used to set the `@doc` from doc comment.
  */
 export function $docFromComment(context: DecoratorContext, target: Type, text: string) {
-  setDocData(context.program, target, { value: text, source: "comment" });
+  setDocData(context, target, { value: text, source: "comment" });
 }
 
-function setDocData(program: Program, target: Type, data: DocData) {
-  program.stateMap(docsKey).set(target, data);
+function setDocData(context: DecoratorContext, target: Type, data: DocData) {
+  state(context, docsKey).set(target, data);
 }
 /**
  * Get the documentation information for the given type. In most cases you probably just want to use {@link getDoc}

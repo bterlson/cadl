@@ -44,6 +44,7 @@ export const intrinsicNameToTSType = new Map<string, string>([
   ["int64", "bigint"],
   ["boolean", "boolean"],
   ["null", "null"],
+  ["void", "void"],
 ]);
 
 export class TypeScriptInterfaceEmitter extends CodeTypeEmitter {

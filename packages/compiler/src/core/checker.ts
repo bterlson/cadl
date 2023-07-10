@@ -7,6 +7,7 @@ import { createDiagnostic } from "./messages.js";
 import { getIdentifierContext, hasParseError, visitChildren } from "./parser.js";
 import { Program, ProjectedProgram } from "./program.js";
 import { createProjectionMembers } from "./projection-members.js";
+import { Realm } from "./realm.js";
 import {
   getFullyQualifiedSymbolName,
   getParentTemplateNode,
@@ -69,6 +70,7 @@ import {
   NeverType,
   Node,
   NodeFlags,
+  NullType,
   NumericLiteral,
   NumericLiteralNode,
   Operation,
@@ -172,7 +174,7 @@ export interface Checker {
   createAndFinishType<T extends Type extends any ? CreateTypeProps : never>(
     typeDef: T
   ): T & TypePrototype;
-  finishType<T extends Type>(typeDef: T): T;
+  finishType<T extends Type>(typeDef: T, realm?: Realm): T;
   createFunctionType(fn: (...args: Type[]) => Type): FunctionType;
   createLiteralType(value: string, node?: StringLiteralNode): StringLiteral;
   createLiteralType(value: number, node?: NumericLiteralNode): NumericLiteral;
@@ -227,9 +229,10 @@ export interface Checker {
   voidType: VoidType;
   neverType: NeverType;
   anyType: UnknownType;
+  nullType: NullType;
 }
 
-interface TypePrototype {
+export interface TypePrototype {
   projections: ProjectionStatementNode[];
   projectionsByName(name: string): ProjectionStatementNode[];
 }
@@ -359,6 +362,7 @@ export function createChecker(program: Program): Checker {
     evalProjection,
     project,
     neverType,
+    nullType,
     errorType,
     anyType: unknownType,
     voidType,
@@ -3716,8 +3720,8 @@ export function createChecker(program: Program): Checker {
     return typeDef as any;
   }
 
-  function finishType<T extends Type>(typeDef: T): T {
-    return finishTypeForProgramAndChecker(program, typePrototype, typeDef);
+  function finishType<T extends Type>(typeDef: T, realm?: Realm): T {
+    return finishTypeForProgramAndChecker(program, typePrototype, typeDef, realm);
   }
 
   function getLiteralType(node: StringLiteralNode): StringLiteral;
@@ -5457,20 +5461,29 @@ function getDocContent(content: readonly DocContent[]) {
 function finishTypeForProgramAndChecker<T extends Type>(
   program: Program,
   typePrototype: TypePrototype,
-  typeDef: T
+  typeDef: T,
+  realm?: Realm
 ): T {
-  if ("decorators" in typeDef) {
-    for (const decApp of typeDef.decorators) {
-      applyDecoratorToType(program, decApp, typeDef);
-    }
-  }
-
+  applyDecoratorsToType(program, typeDef, realm);
   Object.setPrototypeOf(typeDef, typePrototype);
   typeDef.isFinished = true;
   return typeDef;
 }
 
-function applyDecoratorToType(program: Program, decApp: DecoratorApplication, target: Type) {
+export function applyDecoratorsToType(program: Program, target: Type, realm?: Realm) {
+  if (!("decorators" in target)) return;
+
+  for (const decApp of target.decorators) {
+    applyDecoratorToType(program, decApp, target, realm);
+  }
+}
+
+export function applyDecoratorToType(
+  program: Program,
+  decApp: DecoratorApplication,
+  target: Type,
+  realm?: Realm
+) {
   compilerAssert("decorators" in target, "Cannot apply decorator to non-decoratable type", target);
 
   for (const arg of decApp.args) {
@@ -5484,7 +5497,7 @@ function applyDecoratorToType(program: Program, decApp: DecoratorApplication, ta
   try {
     const args = decApp.args.map((x) => x.jsValue);
     const fn = decApp.decorator;
-    const context = createDecoratorContext(program, decApp);
+    const context = createDecoratorContext(program, decApp, realm);
     fn(context, target, ...args);
   } catch (error: any) {
     // do not fail the language server for exceptions in decorators
@@ -5502,11 +5515,20 @@ function applyDecoratorToType(program: Program, decApp: DecoratorApplication, ta
   }
 }
 
-function createDecoratorContext(program: Program, decApp: DecoratorApplication): DecoratorContext {
-  function createPassThruContext(program: Program, decApp: DecoratorApplication): DecoratorContext {
+function createDecoratorContext(
+  program: Program,
+  decApp: DecoratorApplication,
+  realm?: Realm
+): DecoratorContext {
+  function createPassThruContext(
+    program: Program,
+    decApp: DecoratorApplication,
+    realm?: Realm
+  ): DecoratorContext {
     return {
       program,
       decoratorTarget: decApp.node!,
+      realm,
       getArgumentTarget: () => decApp.node!,
       call: (decorator, target, ...args) => {
         return decorator(createPassThruContext(program, decApp), target, ...args);
@@ -5517,6 +5539,7 @@ function createDecoratorContext(program: Program, decApp: DecoratorApplication):
   return {
     program,
     decoratorTarget: decApp.node!,
+    realm,
     getArgumentTarget: (index: number) => {
       return decApp.args[index]?.node;
     },
