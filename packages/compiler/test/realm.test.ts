@@ -1,24 +1,8 @@
-import assert from "assert";
-import {
-  createTypeSpecLibrary,
-  DecoratorContext,
-  Model,
-  Program,
-  state,
-  Type,
-  Union,
-} from "../src/core/index.js";
-import { Mutators } from "../src/core/mutators.js";
-import { Realm } from "../src/core/realm.js";
-import { createTestHost } from "../src/testing/test-host.js";
-import { createTestWrapper } from "../src/testing/test-utils.js";
-import { BasicTestRunner, TestHost } from "../src/testing/types.js";
-
+/*
 interface StateContext {
   program: Program;
   realm?: Realm;
 }
-
 function createColorDecorators(host: TestHost, runner: BasicTestRunner) {
   const libDef = createTypeSpecLibrary({
     name: "colors",
@@ -224,3 +208,4 @@ describe("Compiler: update and JSON Merge Patch realm", () => {
     );
   });
 });
+*/

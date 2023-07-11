@@ -9,6 +9,7 @@ import {
   Program,
   Type,
 } from "../core/index.js";
+import { mutateSubgraph, Mutator } from "../core/mutators.js";
 import { Realm } from "../core/realm.js";
 import { CustomKeyMap } from "./custom-key-map.js";
 import { Placeholder } from "./placeholder.js";
@@ -47,7 +48,6 @@ export function createAssetEmitter<T, TOptions extends object>(
   const typeId = CustomKeyMap.objectKeyer();
   const contextId = CustomKeyMap.objectKeyer();
   const entryId = CustomKeyMap.objectKeyer();
-  const realmKey = CustomKeyMap.objectKeyer();
   // This is effectively a seen set, ensuring that we don't emit the same
   // type with the same context twice. So the map stores a triple of:
   //
@@ -58,28 +58,23 @@ export function createAssetEmitter<T, TOptions extends object>(
   // Note that in order for this to work, context needs to be interned so
   // contexts with the same values inside are treated as identical in the
   // map. See createInterner for more details.
-  const typeToEmitEntity = new CustomKeyMap<
-    [string, Type, ContextState, Realm | null],
-    EmitEntity<T>
-  >(([method, type, context, realm]) => {
-    return `${method}-${typeId.getKey(type)}-${contextId.getKey(context)}-${
-      realm === null ? "null" : realmKey.getKey(realm)
-    }`;
-  });
+  const typeToEmitEntity = new CustomKeyMap<[string, Type, ContextState], EmitEntity<T>>(
+    ([method, type, context]) => {
+      return `${method}-${typeId.getKey(type)}-${contextId.getKey(context)}`;
+    }
+  );
 
   // When we encounter a circular reference, this map will hold a callback
   // that should be called when the circularly referenced type has completed
   // its emit.
   const waitingCircularRefs = new CustomKeyMap<
-    [string, Type, ContextState, Realm | null],
+    [string, Type, ContextState],
     {
       state: EmitterState;
       cb: (entity: EmitEntity<T>) => EmitEntity<T>;
     }[]
-  >(([method, type, context, realm]) => {
-    return `${method}-${typeId.getKey(type)}-${contextId.getKey(context)}-${
-      realm === null ? "null" : realmKey.getKey(realm)
-    }`;
+  >(([method, type, context]) => {
+    return `${method}-${typeId.getKey(type)}-${contextId.getKey(context)}`;
   });
 
   // Similar to `typeToEmitEntity`, this ensures we don't recompute context
@@ -116,7 +111,7 @@ export function createAssetEmitter<T, TOptions extends object>(
   let incomingReferenceContext: Record<string, string> | null = null;
   const stateInterner = createInterner();
   const stackEntryInterner = createInterner();
-
+  let currentMutators: Mutator[] = [];
   let currentRealm: Realm | null = null;
 
   const assetEmitter: AssetEmitter<T, TOptions> = {
@@ -135,9 +130,14 @@ export function createAssetEmitter<T, TOptions extends object>(
       return program;
     },
 
-    setRealm(realm: Realm | null) {
-      currentRealm = realm;
+    enableMutator(mutators: Mutator | Mutator[]) {
+      if (Array.isArray(mutators)) {
+        currentMutators = [...currentMutators, ...mutators];
+      } else {
+        currentMutators = [...currentMutators, mutators];
+      }
     },
+
     result: {
       declaration(name, value) {
         const scope = currentScope();
@@ -218,6 +218,7 @@ export function createAssetEmitter<T, TOptions extends object>(
           state: {
             lexicalTypeStack,
             context,
+            mutators: currentMutators,
             realm: currentRealm,
           },
           cb: (entity) => invokeReference(this, entity),
@@ -426,17 +427,29 @@ export function createAssetEmitter<T, TOptions extends object>(
     type: Type
   ): EmitEntity<T> {
     let entity: EmitEntity<T>;
-    let emitEntityKey: [string, Type, ContextState, Realm | null];
+    let emitEntityKey: [string, Type, ContextState];
     let cached = false;
-    const realmType = currentRealm ? currentRealm.map(type) : type;
+
+    if (!currentRealm && currentMutators.length > 0) {
+      const result = mutateSubgraph(program, new Set(currentMutators), type as any);
+      if (result.realm) {
+        currentRealm = result.realm;
+        type = result.type;
+      }
+    }
+
+    if (currentRealm) {
+      if (!currentRealm.hasType(type)) {
+        // we've walked out of the realm
+        currentRealm = null;
+      }
+    }
+
     // todo: handle deleted type
-    const args = getTypeEmitterArgs(method, realmType!);
+    const args = getTypeEmitterArgs(method, type);
 
     withTypeContext(method, args, () => {
-      // todo: handle deleted type
-      // have to get the realm type again because context might have set the realm.
-      const realmType = currentRealm ? currentRealm.map(type)! : type;
-      emitEntityKey = [method, realmType, context, currentRealm];
+      emitEntityKey = [method, type, context];
       const seenEmitEntity = typeToEmitEntity.get(emitEntityKey);
 
       if (seenEmitEntity) {
@@ -544,7 +557,6 @@ export function createAssetEmitter<T, TOptions extends object>(
     rawArgs: Parameters<TypeEmitter<T, TOptions>[TMethod]>
   ) {
     const args: Parameters<TypeEmitter<T, TOptions>[TMethod]> = [...rawArgs];
-    args[0] = currentRealm ? currentRealm.map(args[0])! : args[0];
     const type = args[0];
     let newTypeStack: LexicalTypeStackEntry[];
 
@@ -663,6 +675,7 @@ export function createAssetEmitter<T, TOptions extends object>(
   ) {
     const oldContext = context;
     const oldTypeStack = lexicalTypeStack;
+    const oldMutators = currentMutators;
     const oldRealm = currentRealm;
 
     setContextForType(method, args);
@@ -670,6 +683,7 @@ export function createAssetEmitter<T, TOptions extends object>(
 
     context = oldContext;
     lexicalTypeStack = oldTypeStack;
+    currentMutators = oldMutators;
     currentRealm = oldRealm;
   }
 
@@ -679,16 +693,19 @@ export function createAssetEmitter<T, TOptions extends object>(
   function withContext(newContext: EmitterState, cb: () => void) {
     const oldContext = context;
     const oldTypeStack = lexicalTypeStack;
+    const oldMutators = currentMutators;
     const oldRealm = currentRealm;
 
     context = newContext.context;
     lexicalTypeStack = newContext.lexicalTypeStack;
+    currentMutators = newContext.mutators;
     currentRealm = newContext.realm;
 
     cb();
 
     context = oldContext;
     lexicalTypeStack = oldTypeStack;
+    currentMutators = oldMutators;
     currentRealm = oldRealm;
   }
 
@@ -700,16 +717,16 @@ export function createAssetEmitter<T, TOptions extends object>(
           return "arrayLiteral";
         }
 
+        if (type.indexer && type.indexer.key!.name === "integer") {
+          return "arrayDeclaration";
+        }
+
         if (type.name === "") {
           return "modelLiteral";
         }
 
         if (type.templateMapper) {
           return "modelInstantiation";
-        }
-
-        if (type.indexer && type.indexer.key!.name === "integer") {
-          return "arrayDeclaration";
         }
 
         return "modelDeclaration";
@@ -774,9 +791,6 @@ export function createAssetEmitter<T, TOptions extends object>(
  * @returns
  */
 function isDeclaration(type: Type): type is TypeSpecDeclaration | Namespace {
-  if (!type) {
-    debugger;
-  }
   switch (type.kind) {
     case "Namespace":
     case "Interface":

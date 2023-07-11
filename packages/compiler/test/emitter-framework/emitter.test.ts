@@ -12,7 +12,6 @@ import {
   Union,
 } from "../../src/core/index.js";
 import { Mutators } from "../../src/core/mutators.js";
-import { Realm } from "../../src/core/realm.js";
 import {
   ArrayBuilder,
   AssetEmitter,
@@ -497,11 +496,10 @@ describe("emitter-framework: typescript emitter", () => {
     assert.match(contents, /prop: Baz/);
   });
 
-  it.only("works with realms", async () => {
+  it("works with realms", async () => {
     class AlwaysUpdate extends SingleFileEmitter {
-      operationDeclarationContext(operation: Operation, name: string): Context {
-        realm.clone(operation);
-        this.emitter.setRealm(realm);
+      operationParametersContext(operation: Operation, parameters: Model): Context {
+        this.emitter.enableMutator([Mutators.Visibility.update, Mutators.JSONMergePatch]);
         return {};
       }
     }
@@ -510,22 +508,20 @@ describe("emitter-framework: typescript emitter", () => {
       model Foo {
         @visibility("read") id: string;
         required: string;
-        bars?: Bar[];
+        optional?: string;
+        bar: Bar;
+        bars: Bar[];
       }
 
       model Bar {
         @visibility("read") id: string;
         required: string;
-        x?: string;
+        optional?: string;
+        foo: Foo;
       }
-
       op updateFoo(item: Foo): void;
     `;
     const host = await getHostForTypeSpecFile(testCode);
-    const realm = new Realm(host.program, "update and merge", [
-      Mutators.Visibility.update,
-      Mutators.JSONMergePatch,
-    ]);
 
     const emitter = createAssetEmitter(host.program, AlwaysUpdate, {
       emitterOutputDir: host.program.compilerOptions.outputDir!,

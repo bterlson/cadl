@@ -33,6 +33,7 @@ interface UnionVariantOptions {
   union?: Union;
 }
 export function createTypeFactory(program: Program, realm?: Realm) {
+  const nostdlib = program.compilerOptions.nostdlib;
   const F = {
     literal(value: string | number | boolean | null) {
       switch (typeof value) {
@@ -204,15 +205,16 @@ export function createTypeFactory(program: Program, realm?: Realm) {
     finishType(type: Type) {
       finishType(type);
     },
-    null: program.checker.nullType,
-    never: program.checker.neverType,
-    string: program.checker.getStdType("string"),
+    null: nostdlib ? (null as any) : program.checker.nullType,
+    never: nostdlib ? (null as any) : program.checker.neverType,
+    string: nostdlib ? (null as any) : program.checker.getStdType("string"),
     globalNamespace: program.getGlobalNamespaceType(),
   };
 
   return F;
 
   function finishType(type: Type) {
+    realm?.addType(type);
     program.checker.finishType(type, realm);
   }
 

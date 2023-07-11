@@ -1,0 +1,29 @@
+import { Mutators, mutateSubgraph } from "../src/core/mutators.js";
+import { Model } from "../src/index.js";
+import { createTestHost } from "../src/testing/test-host.js";
+import { createTestWrapper } from "../src/testing/test-utils.js";
+import { BasicTestRunner, TestHost } from "../src/testing/types.js";
+
+describe("compiler: Mutators", () => {
+  let host: TestHost;
+  let runner: BasicTestRunner;
+
+  beforeEach(async () => {
+    host = await createTestHost();
+    runner = createTestWrapper(host);
+  });
+
+  describe("Visibility", () => {
+    it("works", async () => {
+      const code = `
+      @test model Foo {
+        @visibility("create") x: string;
+      };
+    `;
+
+      const { Foo } = (await runner.compile(code)) as { Foo: Model };
+      const mutated = mutateSubgraph(runner.program, new Set([Mutators.Visibility.read]), Foo);
+      console.log([...mutated.type.properties]);
+    });
+  });
+});
