@@ -16,10 +16,12 @@ export {
   setTypeSpecNamespace,
 } from "./library.js";
 export * from "./module-resolver.js";
+export * from "./mutators.js";
 export * from "./node-host.js";
 export * from "./parser.js";
 export * from "./path-utils.js";
 export * from "./program.js";
+export * from "./realm.js";
 export * from "./scanner.js";
 export * from "./semantic-walker.js";
 export * from "./type-utils.js";
