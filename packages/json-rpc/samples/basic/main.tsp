@@ -20,10 +20,8 @@ model Todo {
 
   @visibility("read")
   updatedAt: zonedDateTime;
-
-  // date update fields
+  
   completed: boolean;
-
   active: boolean;
 }
 
@@ -34,7 +32,6 @@ interface Todos {
   @update updateTodo(id: Todo.id, todo: Todo): Todo;
   @delete deleteTodo(id: Todo.id): void;
   @query listTodos(): Todo[];
-  //@event newTodo(): Todo;
 }
 
 /*

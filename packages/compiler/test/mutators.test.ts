@@ -18,11 +18,12 @@ describe("compiler: Mutators", () => {
       const code = `
       @test model Foo {
         @visibility("create") x: string;
+        y: string;
       };
     `;
 
       const { Foo } = (await runner.compile(code)) as { Foo: Model };
-      const mutated = mutateSubgraph(runner.program, new Set([Mutators.Visibility.read]), Foo);
+      const mutated = mutateSubgraph(runner.program, [Mutators.Visibility.read], Foo);
       console.log([...mutated.type.properties]);
     });
   });
