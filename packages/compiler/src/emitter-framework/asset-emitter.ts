@@ -9,7 +9,7 @@ import {
   Program,
   Type,
 } from "../core/index.js";
-import { mutateSubgraph, Mutator } from "../core/mutators.js";
+import { Mutator } from "../core/mutators.js";
 import { Realm } from "../core/realm.js";
 import { CustomKeyMap } from "./custom-key-map.js";
 import { Placeholder } from "./placeholder.js";
@@ -128,6 +128,10 @@ export function createAssetEmitter<T, TOptions extends object>(
 
     getProgram() {
       return program;
+    },
+
+    getEmitContext() {
+      return emitContext;
     },
 
     enableMutator(mutators: Mutator | Mutator[]) {
@@ -429,21 +433,6 @@ export function createAssetEmitter<T, TOptions extends object>(
     let entity: EmitEntity<T>;
     let emitEntityKey: [string, Type, ContextState];
     let cached = false;
-
-    if (!currentRealm && currentMutators.length > 0) {
-      const result = mutateSubgraph(program, new Set(currentMutators), type as any);
-      if (result.realm) {
-        currentRealm = result.realm;
-        type = result.type;
-      }
-    }
-
-    if (currentRealm) {
-      if (!currentRealm.hasType(type)) {
-        // we've walked out of the realm
-        currentRealm = null;
-      }
-    }
 
     // todo: handle deleted type
     const args = getTypeEmitterArgs(method, type);

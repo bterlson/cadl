@@ -11,7 +11,7 @@ import {
   Type,
   Union,
 } from "../../src/core/index.js";
-import { Mutators } from "../../src/core/mutators.js";
+import { Mutators, mutateSubgraph } from "../../src/core/mutators.js";
 import {
   ArrayBuilder,
   AssetEmitter,
@@ -498,27 +498,28 @@ describe("emitter-framework: typescript emitter", () => {
 
   it("works with realms", async () => {
     class AlwaysUpdate extends SingleFileEmitter {
-      operationParametersContext(operation: Operation, parameters: Model): Context {
-        this.emitter.enableMutator([Mutators.Visibility.update, Mutators.JSONMergePatch]);
-        return {};
+      operationParameters(operation: Operation, parameters: Model): EmitterOutput<string> {
+        const cloned = mutateSubgraph(
+          this.emitter.getProgram(),
+          [Mutators.Visibility.update, Mutators.JSONMergePatch],
+          parameters
+        );
+
+        return super.operationParameters(operation, cloned.type);
+      }
+
+      arrayLiteral(array: Model, elementType: Type): EmitterOutput<string> {
+        return super.arrayLiteral(array, elementType);
       }
     }
 
     const testCode = `
       model Foo {
-        @visibility("read") id: string;
-        required: string;
-        optional?: string;
         bar: Bar;
         bars: Bar[];
       }
 
-      model Bar {
-        @visibility("read") id: string;
-        required: string;
-        optional?: string;
-        foo: Foo;
-      }
+      model Bar {}
       op updateFoo(item: Foo): void;
     `;
     const host = await getHostForTypeSpecFile(testCode);
@@ -527,7 +528,7 @@ describe("emitter-framework: typescript emitter", () => {
       emitterOutputDir: host.program.compilerOptions.outputDir!,
       options: {},
     } as any);
-    emitter.emitProgram();
+    emitter.emitType(host.program.resolveTypeReference("updateFoo")[0]!);
     await emitter.writeOutput();
     const contents = (await host.compilerHost.readFile("tsp-output/output.ts")).text;
 

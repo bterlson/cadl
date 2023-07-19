@@ -1,4 +1,5 @@
 import {
+  EmitContext,
   Enum,
   Interface,
   IntrinsicType,
@@ -30,6 +31,7 @@ export interface AssetEmitter<T, TOptions extends object = Record<string, unknow
   getContext(): Context;
   getOptions(): AssetEmitterOptions<TOptions>;
   getProgram(): Program;
+  getEmitContext(): EmitContext<TOptions>;
   emitTypeReference(type: Type): EmitEntity<T>;
   emitDeclarationName(type: TypeSpecDeclaration): string | undefined;
   emitType(type: Type): EmitEntity<T>;

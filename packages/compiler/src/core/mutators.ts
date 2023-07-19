@@ -36,11 +36,11 @@ export interface MutatorFn<T extends Type> {
 }
 
 export interface MutatorFilterFn<T extends Type> {
-  (sourceType: T, program: Program, realm: Realm): boolean;
+  (sourceType: T, program: Program, realm: Realm): boolean | MutatorFlow;
 }
 
 export interface Mutator {
-  startFilter?(sourceType: Type, program: Program): boolean;
+  name: string;
   Model?: MutatorRecord<Model>;
   ModelProperty?: MutatorRecord<ModelProperty>;
   Scalar?: MutatorRecord<Scalar>;
@@ -60,20 +60,21 @@ export interface VisibilityOptions {
   visibility: string;
 }
 
-const passthrough: MutatorRecord<any> = {
-  filter() {
-    return true;
-  },
-  mutate(t) {
-    return t;
-  },
-};
+export enum MutatorFlow {
+  MutateAndRecurse = 0,
+  DontMutate = 1 << 0,
+  DontRecurse = 1 << 1,
+}
 
 export function createVisibilityMutator(visibility: string): Mutator {
   return {
-    ModelProperty: passthrough,
+    name: visibility + " Visibility",
     Model: {
       filter(m, program, realm) {
+        if (isArrayModelType(program, m)) {
+          return MutatorFlow.DontMutate;
+        }
+
         return true;
       },
       mutate(m, clone, program, realm) {
@@ -97,10 +98,10 @@ export function createVisibilityMutator(visibility: string): Mutator {
 }
 
 const JSONMergePatch: Mutator = {
-  ModelProperty: passthrough,
+  name: "JSON Merge Patch",
   Model: {
     filter(m, program, realm) {
-      return !isArrayModelType(program, m);
+      return isArrayModelType(program, m) ? MutatorFlow.DontRecurse | MutatorFlow.DontMutate : true;
     },
     mutate(sourceType, clone, program, realm) {
       if (clone.name) {
@@ -128,91 +129,6 @@ export const Mutators = {
   JSONMergePatch,
 };
 
-/*
-model A {
-  @visibility("read") id: string;
-  b: B;
-  bArr: B[];
-  c: C;
-}
-
-model B {}
-
-model C {
-  prop: string;
-}
-
-op Foo(m: A): void;
-
-Flow:
-* Visit A
-  Clone A
-  Mutate A (Visibility)
-  Mutate A (Merge Patch)
-  Walk A's references
-  * Visit B
-    Clone B
-    Mutate B (Visibility)
-    Mutate B (Merge patch)
-    Finish BUpdateMergePatch
-  * Visit B[]
-    Clone B[]
-    Mutate B[] (Merge patch, control flow, disable mutation for subgraph rooted at indexer value)
-    * Visit B
-      Mutate B (Visibility)
-      Finish BUpdate
-    Finish BUpdate[]
-  * Visit C
-    Clone C
-    Mutate C (Merge patch)
-    Finish CMergePatch
-  Finish AUpdateMergePatch
-
-
-AUpdateMergePatch
-BUpdateMergePatch
-CUpdateMergePatch
-
-Model A {
-  @visibility("read") id: string;
-  b: B;
-}
-
-model B {
-  c: C;
-}
-
-model C {
-  @visibility("read") id: string;
-  prop: string;
-}
-
-AUpdateMergePatch
-BMergePatch
-CMergePatch
-
-// but if C doesn't have visibility changes....
-Model A {
-  @visibility("read") id: string;
-  b: B;
-}
-
-model B {
-  c: C;
-}
-
-model C {
-  id: string;
-  prop: string;
-}
-
-
-Flow:
-* Visit A
-  Clone A
-  Mutate A (Visibility)
-*/
-
 type MutatableType = Exclude<
   Type,
   | TemplateParameter
@@ -233,11 +149,13 @@ const seen = new CustomKeyMap<[MutatableType, Set<Mutator>], Type>(([type, mutat
 });
 export function mutateSubgraph<T extends MutatableType>(
   program: Program,
-  mutators: Set<Mutator>,
+  mutators: Mutator[],
   type: T
 ): { realm: Realm | null; type: T } {
   const realm = new Realm(program, "realm for mutation");
-  const mutated = mutateSubgraphWorker(type, mutators);
+  const interstitials: (() => void)[] = [];
+
+  const mutated = mutateSubgraphWorker(type, new Set(mutators));
 
   if (mutated === type) {
     return { realm: null, type };
@@ -248,71 +166,115 @@ export function mutateSubgraph<T extends MutatableType>(
   function mutateSubgraphWorker<T extends MutatableType>(type: T, activeMutators: Set<Mutator>): T {
     const existing = seen.get([type, activeMutators]);
     if (existing) {
+      cloneInterstitials();
       return existing as T;
     }
 
-    const newActiveMutators = new Set(activeMutators.values());
     let sourceType = type;
     let clone: T | null = null;
 
     for (const mutator of activeMutators) {
-      const record = mutator[type.kind] as MutatorRecord<T>;
-      let applyMutation = false;
-      let mutationFn;
+      const record = mutator[type.kind] as MutatorRecord<T> | undefined;
+      let mutationFn: MutatorFn<T> | null = null;
+      let mutate = false;
+      let recurse = false;
 
-      if (typeof record === "function") {
-        mutationFn = record;
-      } else if (typeof record === "object") {
-        if (record.filter) {
-          applyMutation = record.filter(sourceType, program, realm);
-        } else {
-          applyMutation = true;
-        }
-        mutationFn = record.mutate;
-      }
-
-      if (!applyMutation) {
-        newActiveMutators.delete(mutator);
+      if (!record) {
         continue;
       }
+      if (typeof record === "function") {
+        mutationFn = record;
+        mutate = true;
+        recurse = true;
+      } else {
+        mutationFn = record.mutate;
+        if (record.filter) {
+          const filterResult = record.filter(sourceType, program, realm);
+          if (filterResult === true) {
+            mutate = true;
+            recurse = true;
+          } else if (filterResult === false) {
+            mutate = false;
+            recurse = true;
+          } else {
+            mutate = (filterResult & MutatorFlow.DontMutate) === 0;
+            recurse = (filterResult & MutatorFlow.DontRecurse) === 0;
+          }
+        } else {
+          mutate = true;
+          recurse = true;
+        }
+      }
 
-      if (mutationFn) {
+      if (mutate) {
+        cloneInterstitials();
         initializeClone();
-        mutationFn(sourceType, clone!, program, realm);
+        mutationFn!(sourceType, clone!, program, realm);
+      }
+
+      if (!recurse) {
+        activeMutators.delete(mutator);
       }
     }
+
+    if (!clone) {
+      interstitials.push(initializeClone);
+    }
+
+    visitSubgraph();
 
     if (clone) {
-      if (newActiveMutators.size > 0) {
-        visitSubgraph(clone);
-      }
-
       realm.typeFactory.finishType(clone);
+      return clone;
     }
 
-    return clone ?? type;
+    return type;
 
     function initializeClone() {
       clone = realm.typeFactory.initializeClone(sourceType);
-      seen.set([type, newActiveMutators], clone);
+      seen.set([type, activeMutators], clone);
       sourceType = clone;
     }
-    function visitSubgraph<T extends MutatableType>(root: T) {
+
+    function cloneInterstitials() {
+      for (const interstitial of interstitials) {
+        interstitial();
+      }
+
+      interstitials.length = 0;
+    }
+
+    function visitSubgraph<T extends MutatableType>() {
+      const root = clone ?? type;
       switch (root.kind) {
         case "Model":
           for (const prop of root.properties.values()) {
-            const newProp = mutateSubgraphWorker(prop, newActiveMutators);
-            root.properties.set(prop.name, newProp);
+            const newProp = mutateSubgraphWorker(prop, activeMutators);
+
+            if (clone) {
+              (clone as any).properties.set(prop.name, newProp);
+            }
           }
           if (root.indexer) {
-            root.indexer.value = mutateSubgraphWorker(root.indexer.value as any, newActiveMutators);
+            const res = mutateSubgraphWorker(root.indexer.value as any, activeMutators);
+            if (clone) {
+              (clone as any).indexer.value = res;
+            }
           }
           break;
         case "ModelProperty":
-          root.type = mutateSubgraphWorker(root.type as MutatableType, newActiveMutators);
+          const newType = mutateSubgraphWorker(root.type as MutatableType, activeMutators);
+          if (clone) {
+            (clone as any).type = newType;
+          }
+
           break;
         case "Operation":
-          root.parameters = mutateSubgraphWorker(root.parameters, newActiveMutators);
+          const newParams = mutateSubgraphWorker(root.parameters, activeMutators);
+          if (clone) {
+            (clone as any).parameters = newParams;
+          }
+
           break;
       }
     }
