@@ -216,6 +216,12 @@
       "projectFolder": "packages/best-practices",
       "reviewCategory": "production",
       "shouldPublish": false
+    },
+    {
+      "packageName": "@typespec/json-rpc",
+      "projectFolder": "packages/json-rpc",
+      "reviewCategory": "production",
+      "shouldPublish": false
     }
   ]
 }
