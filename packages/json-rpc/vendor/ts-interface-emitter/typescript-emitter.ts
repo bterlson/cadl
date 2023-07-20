@@ -47,7 +47,7 @@ export const intrinsicNameToTSType = new Map<string, string>([
   ["float32", "number"],
   ["int64", "bigint"],
   ["boolean", "boolean"],
-  ["zonedDateTime", "Date"],
+  ["utcDateTime", "Date"],
   ["null", "null"],
   ["void", "void"],
 ]);

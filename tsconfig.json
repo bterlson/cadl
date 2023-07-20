@@ -22,7 +22,9 @@
     { "path": "packages/ref-doc/tsconfig.json" },
     { "path": "packages/samples/tsconfig.json" },
     { "path": "packages/json-schema/tsconfig.json" },
-    { "path": "packages/best-practices/tsconfig.json" }
+    { "path": "packages/best-practices/tsconfig.json" },
+    { "path": "packages/json-schema/tsconfig.json" },
+    { "path": "packages/json-rpc/tsconfig.json" }
   ],
   "files": []
 }

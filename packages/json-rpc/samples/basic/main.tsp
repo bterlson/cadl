@@ -1,10 +1,10 @@
-import "@typespec/json-api";
+import "@typespec/json-rpc";
 import "@typespec/json-schema";
 
-using JsonSchema;
+using TypeSpec.JsonSchema;
 using JsonRpc;
 
-@JsonSchema("https://mydemotodoapp.com")
+@jsonSchema("https://mydemotodoapp.com")
 namespace TodoApp;
 
 model Todo {
@@ -16,11 +16,11 @@ model Todo {
   title: string;
 
   @visibility("read")
-  createdAt: zonedDateTime;
+  createdAt: utcDateTime;
 
   @visibility("read")
-  updatedAt: zonedDateTime;
-  
+  updatedAt: utcDateTime;
+
   completed: boolean;
   active: boolean;
 }

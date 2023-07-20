@@ -2,6 +2,7 @@ import {
   DecoratorContext,
   EmitContext,
   Interface,
+  isArrayModelType,
   Model,
   mutateSubgraph,
   Mutator,
@@ -15,8 +16,8 @@ import {
 } from "@typespec/compiler";
 import {
   AssetEmitter,
-  CodeTypeEmitter,
   Context,
+  EmitterOutput,
   SourceFile,
 } from "@typespec/compiler/emitter-framework";
 import { JsonSchemaEmitter } from "@typespec/json-schema";
@@ -25,9 +26,42 @@ import { createStateSymbol } from "./lib.js";
 export * from "./expressAdapter.js";
 
 export async function $onEmit(context: EmitContext) {
-  const emitter = context.getAssetEmitter(JsonApiTypeScriptEmitter);
-  emitter.emitProgram();
-  await emitter.writeOutput();
+  const jsonSchemaEmitter = context.getAssetEmitter(JsonSchemaEmitter as any, {
+    emitAllRefs: true,
+  });
+  const typescriptEmitter = context.getAssetEmitter(TSRPCInterfaceEmitter);
+  const program = context.program;
+
+  const jsonRpcs = getJsonRpcs({ program }) as IterableIterator<Interface>;
+  for (const rpc of jsonRpcs) {
+    typescriptEmitter.emitType(rpc);
+    for (const op of rpc.operations.values()) {
+      for (const prop of op.parameters.properties.values()) {
+        if (prop.type.kind === "ModelProperty") {
+          // model property references don't apply visibility;
+          jsonSchemaEmitter.emitType(prop.type);
+          continue;
+        }
+        const cloneProp = mutateSubgraph(
+          program,
+          [declarationMutator(op.name + prop.name + "Parameter")],
+          prop.type as any
+        );
+        jsonSchemaEmitter.emitType(cloneProp.type);
+      }
+      if (op.returnType.kind === "Model") {
+        const clonedReturnType = mutateSubgraph(
+          program,
+          [declarationMutator(op.name + "ReturnType")],
+          op.returnType
+        );
+        jsonSchemaEmitter.emitType(clonedReturnType.type);
+      }
+    }
+  }
+
+  await jsonSchemaEmitter.writeOutput();
+  await typescriptEmitter.writeOutput();
 }
 
 class TSRPCInterfaceEmitter extends TypeScriptInterfaceEmitter {
@@ -67,77 +101,28 @@ class TSRPCInterfaceEmitter extends TypeScriptInterfaceEmitter {
     };
   }
 
-  operationParametersReferenceContext(operation: Operation, parameters: Model): Context {
+  operationParameters(operation: Operation, parameters: Model): EmitterOutput<string> {
     const appliedVis = getOperationVisibility(this.#program, operation);
     if (!appliedVis) {
-      return {};
+      return super.operationParameters(operation, parameters);
     }
 
     if (appliedVis === "update") {
-      this.emitter.enableMutator([Mutators.Visibility.update, Mutators.JSONMergePatch]);
+      const clone = mutateSubgraph(
+        this.#program,
+        [Mutators.Visibility.update, Mutators.JSONMergePatch],
+        parameters
+      );
+      return super.operationParameters(operation, clone.type);
     } else {
-      this.emitter.enableMutator(Mutators.Visibility[appliedVis]);
+      const clone = mutateSubgraph(this.#program, [Mutators.Visibility[appliedVis]], parameters);
+      return super.operationParameters(operation, clone.type);
     }
-    return {};
   }
 
   operationReturnTypeReferenceContext(operation: Operation, returnType: Type): Context {
     this.emitter.enableMutator(Mutators.Visibility.read);
     return {};
-  }
-}
-
-class JsonApiTypeScriptEmitter extends CodeTypeEmitter {
-  #jsonSchemaEmitter!: AssetEmitter<object>;
-  #typescriptEmitter!: AssetEmitter<string>;
-
-  #program: Program;
-
-  constructor(emitter: AssetEmitter<string, any>) {
-    super(emitter);
-    this.#program = emitter.getProgram();
-
-    this.#jsonSchemaEmitter = this.emitter
-      .getEmitContext()
-      .getAssetEmitter(JsonSchemaEmitter as any);
-    this.#typescriptEmitter = this.emitter.getEmitContext().getAssetEmitter(TSRPCInterfaceEmitter);
-  }
-
-  program(program: Program) {
-    // todo: fix this cast
-    const jsonRpcs = getJsonRpcs({ program }) as IterableIterator<Interface>;
-    for (const rpc of jsonRpcs) {
-      this.#typescriptEmitter.emitType(rpc);
-      for (const op of rpc.operations.values()) {
-        for (const prop of op.parameters.properties.values()) {
-          if (prop.type.kind === "ModelProperty") {
-            // model property references don't apply visibility;
-            this.#jsonSchemaEmitter.emitType(prop.type);
-            continue;
-          }
-          const cloneProp = mutateSubgraph(
-            program,
-            [declarationMutator(op.name + prop.name + "Parameter")],
-            prop.type as any
-          );
-          this.#jsonSchemaEmitter.emitType(cloneProp.type);
-        }
-        if (op.returnType.kind === "Model") {
-          const clonedReturnType = mutateSubgraph(
-            program,
-            [declarationMutator(op.name + "ReturnType")],
-            op.returnType
-          );
-          this.#jsonSchemaEmitter.emitType(clonedReturnType.type);
-        }
-      }
-    }
-  }
-
-  async writeOutput(sourceFiles: SourceFile<string>[]): Promise<void> {
-    await this.#jsonSchemaEmitter.writeOutput();
-    await this.#typescriptEmitter.writeOutput();
-    await super.writeOutput(sourceFiles);
   }
 }
 
@@ -194,19 +179,16 @@ function declarationMutator(name: string): Mutator {
   return {
     name: "JsonRpc.declarationMutator",
     Model: {
-      filter(m) {
-        if (m.name) {
-          return MutatorFlow.DontRecurse;
-        } else {
+      filter(m, program) {
+        if (m.name && !(isArrayModelType(program, m) && m.name === "Array")) {
           return MutatorFlow.DontRecurse | MutatorFlow.DontMutate;
+        } else {
+          return MutatorFlow.DontRecurse;
         }
       },
       mutate(m, clone) {
-        if (!name) {
-          return;
-        }
-
         clone.name = name;
+        console.log("Set name to ", name);
       },
     },
   };

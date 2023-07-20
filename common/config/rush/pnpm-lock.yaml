@@ -457,6 +457,79 @@ importers:
         specifier: ~5.1.3
         version: 5.1.3
 
+  ../../packages/json-rpc:
+    dependencies:
+      '@typespec/json-schema':
+        specifier: workspace:~0.46.0
+        version: link:../json-schema
+      express:
+        specifier: ~4.18.2
+        version: 4.18.2
+      js-yaml:
+        specifier: ~4.1.0
+        version: 4.1.0
+      prettier:
+        specifier: ~2.8.7
+        version: 2.8.7
+    devDependencies:
+      '@types/express':
+        specifier: ~4.17.17
+        version: 4.17.17
+      '@types/js-yaml':
+        specifier: ~4.0.1
+        version: 4.0.1
+      '@types/mocha':
+        specifier: ~10.0.1
+        version: 10.0.1
+      '@types/node':
+        specifier: ~18.11.9
+        version: 18.11.9
+      '@types/prettier':
+        specifier: 2.6.0
+        version: 2.6.0
+      '@typespec/compiler':
+        specifier: workspace:~0.46.0
+        version: link:../compiler
+      '@typespec/eslint-plugin':
+        specifier: workspace:~0.46.0
+        version: link:../eslint-plugin-typespec
+      '@typespec/internal-build-utils':
+        specifier: workspace:~0.46.0
+        version: link:../internal-build-utils
+      '@typespec/library-linter':
+        specifier: workspace:~0.46.0
+        version: link:../library-linter
+      '@typespec/openapi3':
+        specifier: workspace:~0.46.0
+        version: link:../openapi3
+      ajv:
+        specifier: ~8.12.0
+        version: 8.12.0
+      ajv-formats:
+        specifier: ~2.1.1
+        version: 2.1.1(ajv@8.12.0)
+      c8:
+        specifier: ~8.0.0
+        version: 8.0.0
+      eslint:
+        specifier: ^8.42.0
+        version: 8.42.0
+      mocha:
+        specifier: ~10.2.0
+        version: 10.2.0
+      mocha-junit-reporter:
+        specifier: ~2.2.0
+        version: 2.2.0(mocha@10.2.0)
+      mocha-multi-reporters:
+        specifier: ~1.5.1
+        version: 1.5.1(mocha@10.2.0)
+      rimraf:
+        specifier: ~5.0.1
+        version: 5.0.1
+      typescript:
+        specifier: ~5.1.3
+        version: 5.1.3
+
   ../../packages/json-schema:
     dependencies:
       js-yaml:
@@ -6305,7 +6378,6 @@ packages:
     dependencies:
       '@types/connect': 3.4.35
       '@types/node': 18.11.9
-    dev: false
 
   /@types/bonjour@3.5.10:
     resolution: {integrity: sha512-p7ienRMiS41Nu2/igbJxxLDWrSZ0WxM8UQgCeO9KhoVF7cOVFkrKsiDr1EsJIla8vV3oEEjGcz11jc5yimhzZw==}
@@ -6328,7 +6400,6 @@ packages:
     resolution: {integrity: sha512-cdeYyv4KWoEgpBISTxWvqYsVy444DOqehiF3fM3ne10AmJ62RSyNkUnxMJXHQWRQQX2eR94m5y1IZyDwBjV9FQ==}
     dependencies:
       '@types/node': 18.11.9
-    dev: false
 
   /@types/debounce@1.2.1:
     resolution: {integrity: sha512-epMsEE85fi4lfmJUH/89/iV/LI+F5CvNIvmgs5g5jYFPfhO2S/ae8WSsLOKWdwtoaZw9Q2IhJ4tQ5tFCcS/4HA==}
@@ -6360,7 +6431,6 @@ packages:
       '@types/qs': 6.9.7
       '@types/range-parser': 1.2.4
       '@types/send': 0.17.1
-    dev: false
 
   /@types/express@4.17.17:
     resolution: {integrity: sha512-Q4FmmuLGBG58btUnfS1c1r/NQdlp3DMfGDGig8WhfpA2YRUtEkxAjkZb0yvplJGYdF1fsQ81iMDcH24sSCNC/Q==}
@@ -6369,7 +6439,6 @@ packages:
       '@types/express-serve-static-core': 4.17.35
       '@types/qs': 6.9.7
       '@types/serve-static': 1.15.1
-    dev: false
 
   /@types/hast@2.3.4:
     resolution: {integrity: sha512-wLEm0QvaoawEDoTRwzTXp4b4jpwiJDvR5KMnFnVodm3scufTlBOWRD6N1OBf9TZMhjlNsSfcO5V+7AF4+Vy+9g==}
@@ -6433,11 +6502,9 @@ packages:
 
   /@types/mime@1.3.2:
     resolution: {integrity: sha512-YATxVxgRqNH6nHEIsvg6k2Boc1JHI9ZbH5iWFFv/MTkchz3b1ieGDa5T0a9RznNdI0KhVbdbWSN+KWWrQZRxTw==}
-    dev: false
 
   /@types/mime@3.0.1:
     resolution: {integrity: sha512-Y4XFY5VJAuw0FgAqPNd6NNoV44jbq9Bz2L7Rh/J6jLTiHBSBJa9fxqQIvkIld4GsoDOcCbvzOUAbLPsSKKg+uA==}
-    dev: false
 
   /@types/mocha@10.0.1:
     resolution: {integrity: sha512-/fvYntiO1GeICvqbQ3doGDIP97vWmvFt83GKguJ6prmQM2iXZfFcq6YE8KteFyRtX2/h5Hf91BYvPodJKFYv5Q==}
@@ -6489,11 +6556,9 @@ packages:
 
   /@types/qs@6.9.7:
     resolution: {integrity: sha512-FGa1F62FT09qcrueBA6qYTrJPVDzah9a+493+o2PCXsesWHIn27G98TsSMs3WPNbZIEj4+VJf6saSFpvD+3Zsw==}
-    dev: false
 
   /@types/range-parser@1.2.4:
     resolution: {integrity: sha512-EEhsLsD6UsDM1yFhAvy0Cjr6VwmpMWqFBCb9w07wVugF7w9nfajxLuVmngTIpgS6svCnm6Vaw+MZhoDCKnOfsw==}
-    dev: false
 
   /@types/react-dom@18.2.4:
     resolution: {integrity: sha512-G2mHoTMTL4yoydITgOGwWdWMVd8sNgyEP85xVmMKAPUBwQWm9wBPQUmvbeF4V3WBY1P7mmL4BkjQ0SqUpf1snw==}
@@ -6560,7 +6625,6 @@ packages:
     dependencies:
       '@types/mime': 1.3.2
       '@types/node': 18.11.9
-    dev: false
 
   /@types/serve-index@1.9.1:
     resolution: {integrity: sha512-d/Hs3nWDxNL2xAczmOVZNj92YZCS6RGxfBPjKzuu/XirCgXdpKEb88dYNbrYGint6IVWLNP+yonwVAuRC0T2Dg==}
@@ -6573,7 +6637,6 @@ packages:
     dependencies:
       '@types/mime': 3.0.1
       '@types/node': 18.11.9
-    dev: false
 
   /@types/sinon@10.0.13:
     resolution: {integrity: sha512-UVjDqJblVNQYvVNUsj0PuYYw0ELRmgt1Nt5Vk0pT5f16ROGfcKJY8o1HVuMOJOpD727RrGB9EGvoaTQE5tgxZQ==}
