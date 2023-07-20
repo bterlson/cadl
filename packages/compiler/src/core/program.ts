@@ -823,8 +823,8 @@ export async function compile(
       program,
       emitterOutputDir: emitter.emitterOutputDir,
       options: emitter.options,
-      getAssetEmitter(TypeEmitterClass) {
-        return createAssetEmitter(program, TypeEmitterClass, this);
+      getAssetEmitter(TypeEmitterClass, overrideOptions: any) {
+        return createAssetEmitter(program, TypeEmitterClass, this, overrideOptions);
       },
     };
     try {

@@ -74,13 +74,9 @@ export function createVisibilityMutator(visibility: string): Mutator {
         if (isArrayModelType(program, m)) {
           return MutatorFlow.DontMutate;
         }
-
         return true;
       },
       mutate(m, clone, program, realm) {
-        if (isArrayModelType(program, m)) {
-          return;
-        }
         if (clone.name) {
           clone.name = m.name + visibility.charAt(0).toUpperCase() + visibility.slice(1);
         }
@@ -217,7 +213,9 @@ export function mutateSubgraph<T extends MutatableType>(
       }
     }
 
+    let popInterstitial = false;
     if (!clone) {
+      popInterstitial = true;
       interstitials.push(initializeClone);
     }
 
@@ -226,6 +224,10 @@ export function mutateSubgraph<T extends MutatableType>(
     if (clone) {
       realm.typeFactory.finishType(clone);
       return clone;
+    }
+
+    if (popInterstitial) {
+      interstitials.pop();
     }
 
     return type;

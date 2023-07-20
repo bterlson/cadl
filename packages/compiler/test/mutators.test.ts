@@ -23,7 +23,11 @@ describe("compiler: Mutators", () => {
     `;
 
       const { Foo } = (await runner.compile(code)) as { Foo: Model };
-      const mutated = mutateSubgraph(runner.program, [Mutators.Visibility.read], Foo);
+      const mutated = mutateSubgraph(
+        runner.program,
+        [Mutators.Visibility.update, Mutators.JSONMergePatch],
+        Foo
+      );
       console.log([...mutated.type.properties]);
     });
   });

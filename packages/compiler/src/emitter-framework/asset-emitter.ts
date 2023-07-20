@@ -36,14 +36,15 @@ import {
 export function createAssetEmitter<T, TOptions extends object>(
   program: Program,
   TypeEmitterClass: typeof TypeEmitter<T, TOptions>,
-  emitContext: EmitContext<TOptions>
+  emitContext: EmitContext<TOptions>,
+  overrideOptions?: TOptions
 ): AssetEmitter<T, TOptions> {
   const sourceFiles: SourceFile<T>[] = [];
 
   const options = {
     noEmit: program.compilerOptions.noEmit ?? false,
     emitterOutputDir: emitContext.emitterOutputDir,
-    ...emitContext.options,
+    ...(overrideOptions ?? emitContext.options),
   };
   const typeId = CustomKeyMap.objectKeyer();
   const contextId = CustomKeyMap.objectKeyer();

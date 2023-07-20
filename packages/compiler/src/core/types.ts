@@ -2121,8 +2121,8 @@ export interface DecoratorContext {
 export type StateContext = Program | StateContextRecord;
 
 export interface StateContextRecord {
-  program: Program,
-  realm?: Realm
+  program: Program;
+  realm?: Realm;
 }
 
 export interface EmitContext<TOptions extends object = Record<string, never>> {
@@ -2146,7 +2146,10 @@ export interface EmitContext<TOptions extends object = Record<string, never>> {
    *
    * @param TypeEmitterClass The TypeEmitter to construct your emitted output
    */
-  getAssetEmitter<T>(TypeEmitterClass: typeof TypeEmitter<T, TOptions>): AssetEmitter<T, TOptions>;
+  getAssetEmitter<T>(
+    TypeEmitterClass: typeof TypeEmitter<T, TOptions>,
+    overrideOptions?: any
+  ): AssetEmitter<T, TOptions>;
 }
 
 export type LogLevel = "trace" | "warning" | "error";
