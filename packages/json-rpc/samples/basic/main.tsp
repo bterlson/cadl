@@ -4,11 +4,10 @@ import "@typespec/json-schema";
 using TypeSpec.JsonSchema;
 using JsonRpc;
 
-@jsonSchema("https://mydemotodoapp.com")
 namespace TodoApp;
 
 model Todo {
-  @format("uuid")
+  @pattern("todo-\\d+")
   @visibility("read")
   id: string;
 
@@ -21,17 +20,21 @@ model Todo {
   @visibility("read")
   updatedAt: utcDateTime;
 
+  @visibility("read", "update")
   completed: boolean;
-  active: boolean;
 }
 
 @jsonRpc
 interface Todos {
   @create createTodo(todo: Todo): Todo;
   @query getTodo(id: Todo.id): Todo;
+  @query listTodos(
+    filter?: {
+      includeCompleted?: true;
+    },
+  ): Todo[];
+
   @update updateTodo(id: Todo.id, todo: Todo): Todo;
-  @delete deleteTodo(id: Todo.id): void;
-  @query listTodos(): Todo[];
 }
 
 /*

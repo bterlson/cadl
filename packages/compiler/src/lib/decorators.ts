@@ -14,7 +14,7 @@ import {
   validateDecoratorUniqueOnNode,
 } from "../core/index.js";
 import { createDiagnostic, reportDiagnostic } from "../core/messages.js";
-import { Program, ProjectedProgram, state } from "../core/program.js";
+import { Program, ProjectedProgram, setState, state } from "../core/program.js";
 import {
   ArrayModelType,
   DecoratorContext,
@@ -27,6 +27,7 @@ import {
   Namespace,
   Operation,
   Scalar,
+  StateContext,
   Type,
   Union,
 } from "../core/types.js";
@@ -114,7 +115,7 @@ export function $docFromComment(context: DecoratorContext, target: Type, text: s
 }
 
 function setDocData(context: DecoratorContext, target: Type, data: DocData) {
-  state(context, docsKey).set(target, data);
+  setState(docsKey, target, data);
 }
 /**
  * Get the documentation information for the given type. In most cases you probably just want to use {@link getDoc}
@@ -325,11 +326,13 @@ export function $maxLength(
     return;
   }
 
-  context.program.stateMap(maxLengthValuesKey).set(target, maxLength);
+  setState(maxLengthValuesKey, target, maxLength);
 }
 
-export function getMaxLength(program: Program, target: Type): number | undefined {
-  return program.stateMap(maxLengthValuesKey).get(target);
+export function getMaxLength(context: StateContext, target: Type): number | undefined {
+  const test = state(maxLengthValuesKey, target);
+
+  return test;
 }
 
 // -- @minItems decorator ---------------------

@@ -505,7 +505,7 @@ describe("emitter-framework: typescript emitter", () => {
           parameters
         );
 
-        return super.operationParameters(operation, cloned.type);
+        return super.operationParameters(operation, cloned.type as Model);
       }
 
       arrayLiteral(array: Model, elementType: Type): EmitterOutput<string> {

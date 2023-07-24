@@ -235,6 +235,7 @@ export interface Checker {
 export interface TypePrototype {
   projections: ProjectionStatementNode[];
   projectionsByName(name: string): ProjectionStatementNode[];
+  program: Program;
 }
 
 /** @deprecated Use TypeSpecCompletionItem */
@@ -283,6 +284,7 @@ export function createChecker(program: Program): Checker {
     projectionsByName(name: string): ProjectionStatementNode[] {
       return this.projections.filter((p) => p.id.sv === name);
     },
+    program
   };
   const globalNamespaceNode = createGlobalNamespaceNode();
   const globalNamespaceType = createGlobalNamespaceType();

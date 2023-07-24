@@ -162,6 +162,11 @@ export function createTypeFactory(program: Program, realm?: Realm) {
             ...type,
             decorators: [...type.decorators],
             properties: copyMap(type.properties),
+            indexer: type.indexer
+              ? {
+                  ...type.indexer,
+                }
+              : undefined,
           });
           break;
 
@@ -199,6 +204,7 @@ export function createTypeFactory(program: Program, realm?: Realm) {
           break;
       }
 
+      realm?.addType(clone);
       return clone;
     },
 
@@ -214,7 +220,6 @@ export function createTypeFactory(program: Program, realm?: Realm) {
   return F;
 
   function finishType(type: Type) {
-    realm?.addType(type);
     program.checker.finishType(type, realm);
   }
 

@@ -147,11 +147,13 @@ export class Realm {
 
   addType(type: Type): void {
     this.#types.add(type);
+    Realm.realmForType.set(type, this);
   }
 
   #cloneIntoRealm<T extends Type>(type: T): T {
     const clone = this.typeFactory.initializeClone(type);
     this.#types.add(clone);
+    Realm.realmForType.set(clone, this);
     return clone;
   }
 
@@ -160,4 +162,6 @@ export class Realm {
   static realmForKey(key: symbol, parentRealm?: Realm) {
     return this.#knownRealms.get(key);
   }
+
+  static realmForType = new Map<Type, Realm>();
 }

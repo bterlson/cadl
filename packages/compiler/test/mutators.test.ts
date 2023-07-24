@@ -28,7 +28,7 @@ describe("compiler: Mutators", () => {
         [Mutators.Visibility.update, Mutators.JSONMergePatch],
         Foo
       );
-      console.log([...mutated.type.properties]);
+      //console.log([...mutated.type.properties]);
     });
   });
 });

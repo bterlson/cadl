@@ -24,6 +24,7 @@ import { CompilerOptions } from "./options.js";
 import { isImportStatement, parse, parseStandaloneTypeReference } from "./parser.js";
 import { getDirectoryPath, joinPaths, resolvePath } from "./path-utils.js";
 import { createProjector } from "./projector.js";
+import { Realm } from "./realm.js";
 import { createTypeFactory } from "./type-factory.js";
 import {
   CompilerHost,
@@ -1213,15 +1214,30 @@ export function createStateAccessors(
   return { stateMap, stateSet };
 }
 
-export function state(context: StateContext, stateKey: symbol) {
+export function stateMap(context: StateContext, stateKey: symbol) {
   const { program, realm }: StateContextRecord = isStateContext(context)
     ? context
     : { program: context };
+
   if (realm) {
     return realm.stateMap(stateKey);
   }
 
   return program.stateMap(stateKey);
+}
+
+export function state(stateKey: symbol, type: Type) {
+  return stateMap(
+    { program: type.program, realm: Realm.realmForType.get(type), type: type },
+    stateKey
+  ).get(type);
+}
+
+export function setState(stateKey: symbol, type: Type, value: any) {
+  return stateMap(
+    { program: type.program, realm: Realm.realmForType.get(type), type: type },
+    stateKey
+  ).set(type, value);
 }
 
 function isStateContext(object: unknown): object is StateContextRecord {

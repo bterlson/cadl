@@ -49,6 +49,7 @@ export interface BaseType {
   projectionSource?: Type;
   projectionBase?: Type;
   projector?: Projector;
+  program: Program;
 
   /**
    * Reflect if a type has been finished(Decorators have been called).
@@ -2123,6 +2124,7 @@ export type StateContext = Program | StateContextRecord;
 export interface StateContextRecord {
   program: Program;
   realm?: Realm;
+  type?: Type;
 }
 
 export interface EmitContext<TOptions extends object = Record<string, never>> {
