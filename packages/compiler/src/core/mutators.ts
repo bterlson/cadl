@@ -1,9 +1,10 @@
 import { CustomKeyMap } from "../emitter-framework/custom-key-map.js";
-import { isArrayModelType, isVisible } from "../index.js";
+import { $doc, isArrayModelType, isVisible } from "../index.js";
 import { Program } from "./program.js";
 import { Realm } from "./realm.js";
 import {
   Decorator,
+  DecoratorFunction,
   Enum,
   EnumMember,
   FunctionParameter,
@@ -121,7 +122,31 @@ const JSONMergePatch: Mutator = {
       for (const prop of clone.properties.values()) {
         const clonedProp = realm.typeFactory.initializeClone(prop);
         if (clonedProp.optional) {
-          prop.type = realm.typeFactory.union([clonedProp.type, program.typeFactory.null]);
+          if (clonedProp.type.kind === "Scalar") {
+            // remove everything but doc and apply it to the declaration
+            // TODO: THIS IS A HACK
+            const docDecorator = clonedProp.decorators.filter((d) => d.decorator === $doc);
+            const otherDecorators: [DecoratorFunction, ...any][] = clonedProp.decorators
+              .filter((d) => d.decorator !== $doc)
+              .map((d) => {
+                return [d.decorator, ...d.args.map((v) => v.jsValue)];
+              });
+
+            clonedProp.decorators = docDecorator;
+
+            const ginnedScalar = realm.typeFactory.scalar(
+              ...otherDecorators,
+              clone.name + prop.name[0].toUpperCase() + prop.name.slice(1),
+              {
+                extends: clonedProp.type,
+              }
+            );
+
+            clonedProp.type = realm.typeFactory.union([ginnedScalar, program.typeFactory.null]);
+          } else {
+            // otherwise pray it works, I guess
+            clonedProp.type = realm.typeFactory.union([clonedProp.type, program.typeFactory.null]);
+          }
         }
         clonedProp.optional = true;
         clone.properties.set(prop.name, clonedProp);
@@ -280,8 +305,11 @@ export function mutateSubgraph<T extends MutatableType>(
         program,
         realm
       ) as any;
-      if (replaceFn) {
+
+      if (replaceFn && result !== undefined) {
         clone = result;
+        seen.set([type, activeMutators], clone);
+        seen.set([type, mutatorsToApply], clone);
       }
     }
 

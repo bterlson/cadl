@@ -14,6 +14,9 @@ model Todo {
   @maxLength(100)
   title: string;
 
+  @maxLength(255)
+  description?: string;
+
   @visibility("read")
   createdAt: utcDateTime;
 

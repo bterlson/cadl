@@ -77,11 +77,13 @@ export async function $onEmit(context: EmitContext) {
         if (prop.type.kind === "ModelProperty") {
           // todo: use a realm, use mutators maybe
           const clone = program.typeFactory.initializeClone(prop.type.type) as Model | Scalar;
+
+          // todo: clean this up
           if (clone.kind === "Scalar") {
-            console.log("Setting base scalar");
             clone.baseScalar = prop.type.type as Scalar;
             clone.namespace = undefined; // don't trip up std type check
           }
+
           clone.decorators.push(...prop.type.decorators);
           clone.name = op.name + prop.name + "Parameter";
           program.typeFactory.finishType(clone);
@@ -106,6 +108,9 @@ export async function $onEmit(context: EmitContext) {
         });
         jsonSchemaJsonEmitter.emitType(cloneProp.type);
         jsonSchemaEmitter.emitType(cloneProp.type);
+
+        const clonePropJSON = mutateSubgraph(program, [JSONMutator], cloneProp.type as any);
+        typescriptEmitter.emitType(clonePropJSON.type);
       }
 
       if (op.returnType.kind === "Model") {
@@ -117,6 +122,9 @@ export async function $onEmit(context: EmitContext) {
         opSpec.returnType = clonedReturnType.type;
         jsonSchemaJsonEmitter.emitType(clonedReturnType.type);
         jsonSchemaEmitter.emitType(clonedReturnType.type);
+
+        const clonePropJSON = mutateSubgraph(program, [JSONMutator], clonedReturnType.type as any);
+        typescriptEmitter.emitType(clonePropJSON.type);
       }
 
       rpcSpec.push(opSpec);
@@ -274,6 +282,12 @@ class TSRPCInterfaceEmitter extends TypeScriptInterfaceEmitter {
     };
   }
 
+  arrayDeclarationContext(model: Model, name: string): Context {
+    return {
+      scope: this.#typesSf.globalScope,
+    };
+  }
+
   operationDeclarationContext(operation: Operation): Context {
     return {
       scope: this.#interfaceSf.globalScope,
@@ -403,15 +417,26 @@ function declarationMutator(name: string): Mutator {
 
 const JSONMutator: Mutator = {
   name: "JsonRpc.JSONMutator",
+  Model: {
+    mutate(m, clone) {
+      if (clone.name) {
+        clone.name += "Json";
+      }
+    },
+  },
   Scalar: {
     filter(s, program) {
       return s.name === "utcDateTime" || s.name === "offsetDateTime";
     },
     replace(s, clone, program, realm) {
+      console.log("replacing scalar");
       if (s.name === "utcDateTime" || s.name === "offsetDateTime") {
-        return realm.typeFactory.scalar([$format, "date"], realm.typeFactory.string, {
+        const scalar = realm.typeFactory.scalar([$format, "date"], "dateString", {
           extends: realm.typeFactory.string,
         });
+
+        scalar.namespace = undefined;
+        return scalar;
       }
 
       return s;

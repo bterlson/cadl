@@ -74,7 +74,7 @@ export function createTypeFactory(program: Program, realm?: Realm) {
     scalar(
       ...args: [...DecoratorArgs[], string, ScalarOptions] | [...DecoratorArgs[], string]
     ): Scalar {
-      const opts = extractArgs<never, ScalarOptions>(args);
+      const opts = extractArgs<never, ScalarOptions>(args, true);
       const type: Scalar = program.checker.createType({
         kind: "Scalar",
         decorators: opts.decorators,
@@ -228,7 +228,8 @@ export function createTypeFactory(program: Program, realm?: Realm) {
   }
 
   function extractArgs<TBody, TOptions>(
-    args: any[]
+    args: any[],
+    noBody = false
   ): {
     decorators: DecoratorApplication[];
     name: string | undefined;
@@ -253,7 +254,7 @@ export function createTypeFactory(program: Program, realm?: Realm) {
     return {
       decorators,
       name: takeWhile((arg) => typeof arg === "string" || typeof arg === "symbol")[0],
-      body: takeWhile((arg) => true)[0],
+      body: takeWhile((arg) => true && !noBody)[0],
       options: takeWhile((arg) => true)[0] ?? {},
     };
 

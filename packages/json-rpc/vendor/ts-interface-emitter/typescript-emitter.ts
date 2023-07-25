@@ -68,11 +68,33 @@ export class TypeScriptInterfaceEmitter extends CodeTypeEmitter {
 
   scalarDeclaration(scalar: Scalar, scalarName: string): EmitterOutput<string> {
     if (!intrinsicNameToTSType.has(scalarName)) {
-      throw new Error("Unknown scalar type " + scalarName);
+      const baseScalar = this.#scalarBuiltinBaseType(scalar);
+      if (!baseScalar || !intrinsicNameToTSType.has(baseScalar.name)) {
+        throw new Error("Unknown scalar type " + scalarName);
+      }
+
+      scalar = baseScalar;
     }
 
-    const code = intrinsicNameToTSType.get(scalarName)!;
+    const code = intrinsicNameToTSType.get(scalar.name)!;
     return this.emitter.result.rawCode(code);
+  }
+
+  #scalarBuiltinBaseType(scalar: Scalar): Scalar | null {
+    let current = scalar;
+    while (current.baseScalar && !this.#isStdType(current)) {
+      current = current.baseScalar;
+    }
+
+    if (this.#isStdType(current)) {
+      return current;
+    }
+
+    return null;
+  }
+
+  #isStdType(type: Type) {
+    return this.emitter.getProgram().checker.isStdType(type);
   }
 
   intrinsic(intrinsic: IntrinsicType, name: string): EmitterOutput<string> {
@@ -132,6 +154,9 @@ export class TypeScriptInterfaceEmitter extends CodeTypeEmitter {
       `;
     }
 
+    if (property.name === "createdAt") {
+      debugger;
+    }
     return this.emitter.result.rawCode(
       code`${docString}${name}${property.optional ? "?" : ""}: ${this.emitter.emitTypeReference(
         property.type
