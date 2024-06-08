@@ -18,7 +18,7 @@
     "json schema"
   ],
   "type": "module",
-  "main": "dist/src/python-sketch/index.js",
+  "main": "dist/src/cli-sketch/src/index.js",
   "exports": {
     ".": {
       "types": "./dist/src/index.d.ts",
@@ -29,7 +29,7 @@
       "default": "./dist/src/testing/index.js"
     }
   },
-  "tspMain": "lib/main.tsp",
+  "tspMain": "src/cli-sketch/lib/main.tsp",
   "engines": {
     "node": ">=18.0.0"
   },
@@ -43,8 +43,14 @@
     "#typespec/emitter/python": {
       "default": "./dist/src/python/index.js"
     },
+    "#typespec/emitter/typescript": {
+      "default": "./dist/src/typescript/index.js"
+    },
     "#typespec/emitter/core": {
       "default": "./dist/src/framework/index.js"
+    },
+    "#typespec-cli": {
+      "default": "./dist/src/cli-sketch/src/index.js"
     }
   },
   "scripts": {
