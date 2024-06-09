@@ -15,7 +15,7 @@ using TypeSpecCLI;
  */
 op Foo(
   todoItem: TodoItem;
-
+  
   /**
    * Whether to show color.
    */

@@ -32,7 +32,11 @@ export interface HelpTextProps {
 export function HelpText({ command, options }: HelpTextProps) {
   const helpers = useHelpers();
   const commandDoc = helpers.getDoc(command);
-  const commandDesc = commandDoc ? (marked(commandDoc) as string).replace(/`/g, "\\`") : "";
+  const commandDesc = commandDoc
+    ? ((marked(commandDoc) as string).trimEnd()+ "\n")
+        .replace(/\n/g, "\\n")
+        .replace(/"/g, '\\"')
+    : "";
   const helpTable = [...options.keys()]
     .sort((a, b) => (a.name > b.name ? 1 : b.name > a.name ? -1 : 0))
     .map((o) => pushHelp(o))
@@ -41,11 +45,11 @@ export function HelpText({ command, options }: HelpTextProps) {
     <Function name={`${command.name}Help`} parameters={{ "noColor?": "boolean" }}>
       {code`
         if (noColor || process.env["NO_COLOR"]) {
-          console.log(\`${command.name} v1.0.0-beta\n\`);
-          console.log(\`${stripAnsi(commandDesc)}\`);
+          console.log("${command.name} " + handler.version + "\\n");
+          console.log("${stripAnsi(commandDesc)}");
         } else {
-          console.log(\`${command.name} v1.0.0-beta\n\`);
-          console.log(\`${commandDesc}\`);
+          console.log("${command.name} ${pc.dim("\" + handler.version + \"")}\\n");
+          console.log("${commandDesc}");
         }
 
         const table = new Table({

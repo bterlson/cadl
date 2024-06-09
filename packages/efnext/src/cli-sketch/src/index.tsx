@@ -29,7 +29,6 @@ export async function $onEmit(context: EmitContext) {
               ${<CommandArgParser command={op} options={options}/>}
             }`
           }
-          <HelpText command={op} options={options} />
         </SourceFile>
       </HelperContext.Provider>
     </EmitOutput>

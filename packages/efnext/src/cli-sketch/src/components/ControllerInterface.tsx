@@ -14,6 +14,7 @@ export function ControllerInterface({ command }: ControllerInterfaceProps) {
   return <>
     <InterfaceDeclaration name="CommandInterface">
       <InterfaceMember type={command} />
+      version: string;
     </InterfaceDeclaration>
     {typeDecls}
   </>

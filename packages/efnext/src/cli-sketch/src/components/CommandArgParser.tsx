@@ -2,6 +2,7 @@ import { code } from "#typespec/emitter/core";
 import { $verbatim, Function, ObjectValue, Value } from "#typespec/emitter/typescript";
 import { Model, ModelProperty, Operation, Union } from "@typespec/compiler";
 import { useHelpers } from "../helpers.js";
+import { HelpText } from "./HelpText.js";
 
 export interface CommandArgParserProps {
   command: Operation;
@@ -57,10 +58,12 @@ export function CommandArgParser({ command, options }: CommandArgParserProps) {
     }
     (handler.${command.name} as any)(... marshalledArgs);
   `;
-  return (
+  return (<>
     <Function name={`parse${command.name}Args`} parameters={{ args: "string[]" }}>
       {body}
     </Function>
+    <HelpText command={command} options={options} />
+    </>
   );
 }
 
