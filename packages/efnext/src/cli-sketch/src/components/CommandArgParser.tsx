@@ -5,9 +5,10 @@ import { useHelpers } from "../helpers.js";
 
 export interface CommandArgParserProps {
   command: Operation;
+  options: Map<ModelProperty, string>;
 }
 
-export function CommandArgParser({ command }: CommandArgParserProps) {
+export function CommandArgParser({ command, options }: CommandArgParserProps) {
   const helpers = useHelpers();
 
   // argument passed to nodeParseArgs
@@ -19,7 +20,6 @@ export function CommandArgParser({ command }: CommandArgParserProps) {
   };
 
   const optionTokenHandlers = [];
-  const options = collectCommandOptions(command);
   // assemble the options in parseArgsArg and arg handlers.
   for (const [option, path] of options) {
     const argOptions: Record<string, any> = {};
@@ -139,39 +139,4 @@ function buildDefaults(type: Model | ModelProperty) {
     }
     return defaultValue;
   }
-}
-function collectCommandOptions(command: Operation): Map<ModelProperty, string> {
-  const commandOpts = new Map<ModelProperty, string>();
-
-  const types: [Model | Union, string, boolean?][] = [[command.parameters, "", true]];
-
-  while (types.length > 0) {
-    const [type, path, topLevel] = types.pop()!;
-
-    if (type.kind === "Model") {
-      let index = 0;
-      for (const param of type.properties.values()) {
-        const paramPath = topLevel ? `[${index}]` : `${path}.${param.name}`;
-        if (param.type.kind === "Model") {
-          types.push([param.type, paramPath]);
-        } else if (
-          param.type.kind === "Union" &&
-          [...param.type.variants.values()].find((v) => v.type.kind === "Model")
-        ) {
-        } else {
-          commandOpts.set(param, paramPath);
-        }
-
-        index++;
-      }
-    } else if (type.kind === "Union") {
-      for (const variant of type.variants.values()) {
-        if (variant.type.kind === "Union" || variant.type.kind === "Model") {
-          types.push([variant.type, path]);
-        }
-      }
-    }
-  }
-
-  return commandOpts;
 }
