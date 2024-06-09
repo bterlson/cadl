@@ -5,6 +5,7 @@ import { CommandArgParser } from "./components/CommandArgParser.js";
 import { ControllerInterface } from "./components/ControllerInterface.js";
 import { HelpText } from "./components/HelpText.js"
 
+export type CliType = Namespace | Interface | Operation;
 
 export async function $onEmit(context: EmitContext) {
   console.time("emit");
@@ -13,28 +14,35 @@ export async function $onEmit(context: EmitContext) {
     return;
   }
 
-  const clis = helpers.listClis() as (Namespace | Interface | Operation)[];
+  const clis = helpers.listClis() as CliType[];
   const cliSfs = [];
 
   for (const cli of clis) {
-    if (cli.kind === "Operation") {
+    
+    const subCommandClis = cli.kind === "Namespace" || cli.kind === "Interface" ? [... cli.operations.values()] : [];
+
+    const parsers = [cli, ... subCommandClis].map(cli => {
       const options = collectCommandOptions(cli);
-      cliSfs.push(
-        <SourceFile path={cli.name + ".ts"} filetype="typescript">
-          {code`
-            import { parseArgs as nodeParseArgs } from "node:util";
-            import Table from "cli-table3";
-          `}
-          <ControllerInterface command={cli} />
-          {code`
-            export function parseArgs(args: string[], handler: CommandInterface) {
-              parse${cli.name}Args(args);
-              ${<CommandArgParser command={cli} options={options}/>}
-            }`
-          }
-        </SourceFile>
-      )
-    }
+      return <CommandArgParser command={cli} options={options}/>
+    })
+    
+    
+    cliSfs.push(
+      <SourceFile path={cli.name + ".ts"} filetype="typescript">
+        {code`
+          import { parseArgs as nodeParseArgs } from "node:util";
+          import Table from "cli-table3";
+        `}
+        <ControllerInterface cli={cli} />
+        
+        {code`
+          export function parseArgs(args: string[], handler: CommandInterface) {
+            parse${cli.name}Args(args);
+            ${parsers}
+          }`
+        }
+      </SourceFile>
+    )
   }
   
   
@@ -49,7 +57,11 @@ export async function $onEmit(context: EmitContext) {
 }
 
 
-function collectCommandOptions(command: Operation): Map<ModelProperty, string> {
+export function collectCommandOptions(command: CliType): Map<ModelProperty, string> {
+  if (command.kind === "Namespace" || command.kind === "Interface") {
+    // TODO: find the root command operation
+    return new Map();
+  }
   const commandOpts = new Map<ModelProperty, string>();
 
   const types: [Model | Union, string, boolean?][] = [[command.parameters, "", true]];

@@ -14,15 +14,28 @@ using TypeSpecCLI;
  * ```
  */
 @cli
-op TodoCLI(
-  todoItem: TodoItem;
+interface TodoCLI {
+  /**
+   * Create a todo item.
+   */
+  op create(
+    todoItem: TodoItem;
+  
+    /**
+     * Whether to show color.
+     */
+    @invertable
+    color?: boolean,
+  ): void;
 
   /**
-   * Whether to show color.
+   * Update a todo item.
    */
-  @invertable
-  color?: boolean,
-): void;
+  op update(
+    id: string;
+  ): void;
+}
+
 
 model TodoItem {
   /**

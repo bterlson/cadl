@@ -1,17 +1,24 @@
 import { code } from "#typespec/emitter/core";
 import { $verbatim, Function, ObjectValue, Value } from "#typespec/emitter/typescript";
-import { Model, ModelProperty, Operation, Union } from "@typespec/compiler";
+import { Interface, Model, ModelProperty, Namespace, Operation } from "@typespec/compiler";
 import { useHelpers } from "../helpers.js";
 import { HelpText } from "./HelpText.js";
+import { CliType } from "#typespec-cli";
 
 export interface CommandArgParserProps {
-  command: Operation;
+  command: Operation | Namespace | Interface;
   options: Map<ModelProperty, string>;
 }
 
 export function CommandArgParser({ command, options }: CommandArgParserProps) {
   const helpers = useHelpers();
-
+  const hasSubcommands = command.kind === "Namespace" || command.kind === "Interface";
+  const subcommands = hasSubcommands ?
+    [... (command as Namespace | Interface).operations.values()] : [];
+  const subcommandMap = new Map<string, Operation>();
+  for (const subcommand of subcommands) {
+    subcommandMap.set(subcommand.name, subcommand);
+  }
   // argument passed to nodeParseArgs
   const parseArgsArg: Record<string, any> = {
     args: $verbatim("args"),
@@ -39,13 +46,22 @@ export function CommandArgParser({ command, options }: CommandArgParserProps) {
     optionTokenHandlers.push(<OptionTokenHandler option={option} path={path} />);
   }
 
-  const defaultArgs = [...command.parameters.properties.values()].map((p) => buildDefaults(p));
+  let defaultArgParams: ModelProperty[];
+
+  if (command.kind === "Interface" || command.kind === "Namespace") {
+    // todo: get "command" op for this command group.
+    defaultArgParams = [];
+  } else {
+    defaultArgParams = [...command.parameters.properties.values()];
+  }
+  const defaultArgs = defaultArgParams.map((p) => buildDefaults(p));
+
   const body = code`
     const { tokens } = nodeParseArgs(${(<ObjectValue jsValue={parseArgsArg} />)});
     const marshalledArgs: any[] = ${(<Value jsValue={defaultArgs} />)};
     for (const token of tokens) {
       if (token.kind === "positional") {
-        ${(<HandlePositionalToken hasPositionals={false} />)}
+        ${(<HandlePositionalToken hasPositionals={false} subcommands={subcommandMap} />)}
       } else if (token.kind === "option") {
         switch (token.name) {
           case "h":
@@ -58,22 +74,37 @@ export function CommandArgParser({ command, options }: CommandArgParserProps) {
     }
     (handler.${command.name} as any)(... marshalledArgs);
   `;
-  return (<>
-    <Function name={`parse${command.name}Args`} parameters={{ args: "string[]" }}>
-      {body}
-    </Function>
-    <HelpText command={command} options={options} />
+
+  return (
+    <>
+      <Function name={`parse${command.name}Args`} parameters={{ args: "string[]" }}>
+        {body}
+      </Function>
+      <HelpText command={command} options={options} subcommands={subcommandMap} />
     </>
   );
 }
 
 interface HandlePositionalTokenProps {
   hasPositionals: boolean;
+  subcommands?: Map<string, CliType>
 }
 
-function HandlePositionalToken({ hasPositionals }: HandlePositionalTokenProps) {
+function HandlePositionalToken({ hasPositionals, subcommands }: HandlePositionalTokenProps) {
   if (hasPositionals) {
     return `throw new Error("NYI")`;
+  } else if (subcommands && subcommands.size > 0) {
+    const subcommandCases = [... subcommands.entries()].map(([name, cli]) => {
+      return code`
+        case "${name}": parse${name}Args(args.slice(token.index + 1)); return;
+      `
+    })
+    // TODO: Fix this any cast
+    return code `
+      switch (token.value) {
+        ${subcommandCases as any} 
+      }
+    `
   } else {
     return code`
         throw new Error("Unknown positional argument");
@@ -110,7 +141,7 @@ function OptionTokenHandler({ option, path }: OptionTokenHandlerProps) {
         : [option.name];
 
     return code`
-      ${names.map(v => `case "${v}": `).join("")}${handler}; break;
+      ${names.map((v) => `case "${v}": `).join("")}${handler}; break;
     `;
   }
 }
