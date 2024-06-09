@@ -1,5 +1,5 @@
 import { createContext, useContext } from "#typespec/emitter/core";
-import { EmitContext, Type, isIntrinsicType } from "@typespec/compiler";
+import { EmitContext, Type, getDoc, isIntrinsicType } from "@typespec/compiler";
 import { getShortName, hasShortName, isInvertable, isPositional } from "./decorators.js";
 
 export const HelperContext = createContext<ReturnType<typeof getStateHelpers>>();
@@ -28,5 +28,6 @@ export function getStateHelpers(context: EmitContext) {
         return isIntrinsicType(context.program, type, "boolean");
       },
     },
+    getDoc: getDoc.bind(undefined, context.program),
   };
 }

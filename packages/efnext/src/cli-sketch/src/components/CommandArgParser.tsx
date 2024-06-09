@@ -47,6 +47,10 @@ export function CommandArgParser({ command }: CommandArgParserProps) {
         ${(<HandlePositionalToken hasPositionals={false} />)}
       } else if (token.kind === "option") {
         switch (token.name) {
+          case "h":
+          case "help":
+            ${command.name}Help();
+            return;
           ${optionTokenHandlers}
         }
       }
@@ -123,6 +127,8 @@ function buildDefaults(type: Model | ModelProperty) {
             "default value kind of " + type.defaultValue.valueKind + " not supported"
           );
       }
+    } else if (type.type.kind === "Model") {
+      return buildDefaults(type.type);
     } else {
       return undefined;
     }
