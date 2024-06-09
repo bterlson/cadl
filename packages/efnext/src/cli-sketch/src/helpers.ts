@@ -1,6 +1,6 @@
 import { createContext, useContext } from "#typespec/emitter/core";
 import { EmitContext, Type, getDoc, isIntrinsicType } from "@typespec/compiler";
-import { getShortName, hasShortName, isInvertable, isPositional } from "./decorators.js";
+import { getShortName, hasShortName, isInvertable, isPositional, listClis } from "./decorators.js";
 
 export const HelperContext = createContext<ReturnType<typeof getStateHelpers>>();
 
@@ -29,5 +29,6 @@ export function getStateHelpers(context: EmitContext) {
       },
     },
     getDoc: getDoc.bind(undefined, context.program),
+    listClis: listClis.bind(undefined, context),
   };
 }

@@ -1,4 +1,4 @@
-import { EmitContext, Model, ModelProperty, Namespace, Operation, Program, Type, Union, navigateType } from "@typespec/compiler";
+import { EmitContext, Interface, Model, ModelProperty, Namespace, Operation, Program, Type, Union, navigateType } from "@typespec/compiler";
 import { EmitOutput, SourceFile, code, emit } from "#typespec/emitter/core";
 import { HelperContext, getStateHelpers } from "./helpers.js";
 import { CommandArgParser } from "./components/CommandArgParser.js";
@@ -7,29 +7,41 @@ import { HelpText } from "./components/HelpText.js"
 
 
 export async function $onEmit(context: EmitContext) {
+  console.time("emit");
+  const helpers = getStateHelpers(context);
   if (context.program.compilerOptions.noEmit) {
     return;
   }
 
-  const op = context.program.resolveTypeReference("Foo")![0]! as Operation;
-  const options = collectCommandOptions(op);
-  console.time("emit");
-  emit(context,
-    <EmitOutput>
-      <HelperContext.Provider value={getStateHelpers(context)}>
-        <SourceFile path="test.ts" filetype="typescript">
+  const clis = helpers.listClis() as (Namespace | Interface | Operation)[];
+  const cliSfs = [];
+
+  for (const cli of clis) {
+    if (cli.kind === "Operation") {
+      const options = collectCommandOptions(cli);
+      cliSfs.push(
+        <SourceFile path={cli.name + ".ts"} filetype="typescript">
           {code`
             import { parseArgs as nodeParseArgs } from "node:util";
             import Table from "cli-table3";
           `}
-          <ControllerInterface command={op} />
+          <ControllerInterface command={cli} />
           {code`
             export function parseArgs(args: string[], handler: CommandInterface) {
-              parse${op.name}Args(args);
-              ${<CommandArgParser command={op} options={options}/>}
+              parse${cli.name}Args(args);
+              ${<CommandArgParser command={cli} options={options}/>}
             }`
           }
         </SourceFile>
+      )
+    }
+  }
+  
+  
+  emit(context,
+    <EmitOutput>
+      <HelperContext.Provider value={helpers}>
+        {cliSfs}
       </HelperContext.Provider>
     </EmitOutput>
   )

@@ -13,9 +13,10 @@ using TypeSpecCLI;
  * todo-cli --title "This is a title" --description "This is a description"
  * ```
  */
-op Foo(
+@cli
+op TodoCLI(
   todoItem: TodoItem;
-  
+
   /**
    * Whether to show color.
    */
