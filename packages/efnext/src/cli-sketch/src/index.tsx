@@ -8,7 +8,7 @@ import {
   Operation,
   Union,
 } from "@typespec/compiler";
-import { CommandArgParser } from "./components/CommandArgParser.js";
+import { CommandArgParser } from "./components/CommandArgParser/CommandArgParser.js";
 import { ControllerInterface } from "./components/ControllerInterface.js";
 import { HelperContext, getStateHelpers } from "./helpers.js";
 
