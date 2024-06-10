@@ -1,12 +1,12 @@
+import { CliType } from "#typespec-cli";
 import { Function } from "#typespec/emitter/typescript";
-import { Interface, ModelProperty, Namespace, Operation } from "@typespec/compiler";
+import { ModelProperty } from "@typespec/compiler";
 import { code } from "@typespec/compiler/emitter-framework";
 import { marked } from "marked";
 import { markedTerminal } from "marked-terminal";
 import pc from "picocolors";
 import stripAnsi from "strip-ansi";
 import { useHelpers } from "../helpers.js";
-import { CliType } from "#typespec-cli";
 import { useCommand } from "./CommandArgParser/CommandArgParser.js";
 
 function removeHashAndBold(s: string) {
@@ -37,9 +37,7 @@ export function HelpText({}: HelpTextProps) {
   const helpers = useHelpers();
   const commandDoc = helpers.getDoc(command);
   const commandDesc = commandDoc
-    ? ((marked(commandDoc) as string).trimEnd()+ "\n")
-        .replace(/\n/g, "\\n")
-        .replace(/"/g, '\\"')
+    ? ((marked(commandDoc) as string).trimEnd() + "\n").replace(/\n/g, "\\n").replace(/"/g, '\\"')
     : "";
   const helpTable = [...options.keys()]
     .sort((a, b) => (a.name > b.name ? 1 : b.name > a.name ? -1 : 0))
@@ -52,15 +50,17 @@ export function HelpText({}: HelpTextProps) {
     const subcommandTable = new Table({
       chars: noFormatting,
     });
-    `
-    subcommandHelp += [... subcommandMap.entries()].map(([name, cli]) => {
-      return pushSubcommandHelp(name, cli);
-    }).join("");
+    `;
+    subcommandHelp += [...subcommandMap.entries()]
+      .map(([name, cli]) => {
+        return pushSubcommandHelp(name, cli);
+      })
+      .join("");
 
     subcommandHelp += `
       console.log(\`\\n${pc.bold("Subcommands\n")}\`);
       console.log(subcommandTable.toString());
-    `
+    `;
   }
   return (
     <Function name={`${command.name}Help`} parameters={{ "noColor?": "boolean" }}>

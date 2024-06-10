@@ -1,15 +1,11 @@
 import { CliType } from "#typespec-cli";
-import { code, createContext, useContext } from "#typespec/emitter/core";
-import { Function, ObjectValue, Value } from "#typespec/emitter/typescript";
-import { Interface, Model, ModelProperty, Namespace, Operation } from "@typespec/compiler";
-import { useHelpers } from "../../helpers.js";
+import { createContext, useContext } from "#typespec/emitter/core";
+import { Function } from "#typespec/emitter/typescript";
+import { Interface, ModelProperty, Namespace, Operation } from "@typespec/compiler";
 import { HelpText } from "../HelpText.js";
 import { GetTokens } from "./GetTokens.js";
 import { MarshalledArgsInit } from "./MarshalledArgsInit.js";
-import { PositionalTokenHandler } from "./PositionalTokenHandler.js";
-import { OptionTokenHandler } from "./OptionTokenHandler.js";
 import { TokenLoop } from "./TokenLoop.js";
-
 
 interface CommandContext {
   command: CliType;
@@ -17,7 +13,7 @@ interface CommandContext {
   subcommandMap: Map<string, Operation>;
 }
 
-const CommandContext = createContext<CommandContext>()
+const CommandContext = createContext<CommandContext>();
 
 export function useCommand() {
   return useContext(CommandContext)!;
@@ -33,7 +29,7 @@ export function CommandArgParser({ command, options }: CommandArgParserProps) {
   const subcommands = hasSubcommands
     ? [...(command as Namespace | Interface).operations.values()]
     : [];
-  
+
   // map of subcommand name to the operation for that subcommand
   const subcommandMap = new Map<string, Operation>();
   for (const subcommand of subcommands) {
@@ -48,8 +44,6 @@ export function CommandArgParser({ command, options }: CommandArgParserProps) {
         <TokenLoop />
       </Function>
       <HelpText />
-    </>
+    </CommandContext.Provider>
   );
 }
-
-
