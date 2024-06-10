@@ -71,7 +71,7 @@ export function HelpText({ command, options, subcommands }: HelpTextProps) {
           console.log("${command.name} " + handler.version + "\\n");
           console.log("${stripAnsi(commandDesc)}");
         } else {
-          console.log("${command.name} ${pc.dim("\" + handler.version + \"")}\\n");
+          console.log("${command.name} \" + handler.version + \"\\n");
           console.log("${commandDesc}");
         }
 
@@ -96,7 +96,7 @@ export function HelpText({ command, options, subcommands }: HelpTextProps) {
         const table = new Table({
           chars: noFormatting,
         });
-        table.push(["--help, -h", "${pc.dim("Display this help message.")}"])
+        table.push(["--help, -h", "Display this help message."])
         ${helpTable}
         console.log(\`${pc.bold("Options\n")}\`);
         console.log(table.toString());
@@ -116,10 +116,10 @@ export function HelpText({ command, options, subcommands }: HelpTextProps) {
       options += `, -${helpers.option.getShortName(option)}`;
     }
 
-    return `table.push([\`${options}\`, \`${pc.dim(helpers.getDoc(option))}\`]);`;
+    return `table.push([\`${options}\`, \`${helpers.getDoc(option)}\`]);`;
   }
 
   function pushSubcommandHelp(name: string, cli: CliType) {
-    return `subcommandTable.push(["${name}", \`${pc.dim(helpers.getDoc(cli))}\`]);`;
+    return `subcommandTable.push(["${name}", \`${helpers.getDoc(cli)}\`]);`;
   }
 }

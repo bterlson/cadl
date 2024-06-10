@@ -1,49 +1,26 @@
-import "@typespec/efnext"; // just because it's crammed in here.
-
+import "@typespec/efnext"; 
 using TypeSpecCLI;
-
 /**
- * This is a **really** awesome Todo CLI tool. It makes managing your todo items
- * a joy. So joyful you might cry.
+ * This is a **really** awesome Todo CLI tool. It makes
+ * managing your todo items very easy.
  * 
  * # Usage
  * 
  * ```bash
- * todo-cli --help
- * todo-cli --title "This is a title" --description "This is a description"
+ * todo-cli create --title "title" --description "desc"
+ * todo-cli finish 42
  * ```
  */
-@cli
-interface TodoCLI {
-  /**
-   * Create a todo item.
-   */
-  op create(
-    todoItem: TodoItem;
-  
-    /**
-     * Whether to show color.
-     */
-    @invertable
-    color?: boolean,
-  ): void;
-
-  /**
-   * Update a todo item.
-   */
-  op update(
-    id: string;
-  ): void;
+@cli interface TodoCLI {
+  /** Create a todo item.*/
+  op create(todoItem: TodoItem): void;
+  /** Finish a todo item. */
+  op finish(@positional id: int32): void;
 }
 
-
 model TodoItem {
-  /**
-   * The todo item's title.
-   */
+  /** The todo item's title. */
   @short("t") title: string;
-  /**
-   * The todo item's description.
-   */
+  /** The todo item's description. */
   @short("d") description: string;
 }
