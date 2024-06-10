@@ -1,15 +1,14 @@
-import { $verbatim, ObjectValue } from "#typespec/emitter/typescript";
-import { ModelProperty } from "@typespec/compiler";
-import { useHelpers } from "../../helpers.js";
 import { code } from "#typespec/emitter/core";
+import { $verbatim, ObjectValue } from "#typespec/emitter/typescript";
+import { useHelpers } from "../../helpers.js";
+import { useCommand } from "./CommandArgParser.js";
 
-export interface GetTokensProps {
-  options: Map<ModelProperty, string>;
-}
+export interface GetTokensProps {}
 
-export function GetTokens({options}: GetTokensProps) {
+export function GetTokens({}: GetTokensProps) {
+  const { options } = useCommand();
   const helpers = useHelpers();
-  
+
   const parseArgsArg: Record<string, any> = {
     args: $verbatim("args"),
     tokens: true,
@@ -35,5 +34,5 @@ export function GetTokens({options}: GetTokensProps) {
 
   return code`
     const { tokens } = nodeParseArgs(${(<ObjectValue jsValue={parseArgsArg} />)});
-  `
+  `;
 }

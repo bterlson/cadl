@@ -1,16 +1,13 @@
-import { CliType } from "#typespec-cli";
 import { code } from "#typespec/emitter/core";
+import { useCommand } from "./CommandArgParser.js";
 
-export interface PositionalTokenHandlerProps {
-  hasPositionals: boolean;
-  subcommands?: Map<string, CliType>;
-}
+export interface PositionalTokenHandlerProps {}
 
-export function PositionalTokenHandler({ hasPositionals, subcommands }: PositionalTokenHandlerProps) {
-  if (hasPositionals) {
-    return `throw new Error("NYI")`;
-  } else if (subcommands && subcommands.size > 0) {
-    const subcommandCases = [...subcommands.entries()].map(([name, cli]) => {
+export function PositionalTokenHandler({}: PositionalTokenHandlerProps) {
+  const { subcommandMap } = useCommand();
+  // todo: positionals.
+  if (subcommandMap && subcommandMap.size > 0) {
+    const subcommandCases = [...subcommandMap.entries()].map(([name, cli]) => {
       return code`
         case "${name}": parse${name}Args(args.slice(token.index + 1)); return;
       `;

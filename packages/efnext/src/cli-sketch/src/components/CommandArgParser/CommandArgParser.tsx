@@ -1,5 +1,5 @@
 import { CliType } from "#typespec-cli";
-import { code } from "#typespec/emitter/core";
+import { code, createContext, useContext } from "#typespec/emitter/core";
 import { Function, ObjectValue, Value } from "#typespec/emitter/typescript";
 import { Interface, Model, ModelProperty, Namespace, Operation } from "@typespec/compiler";
 import { useHelpers } from "../../helpers.js";
@@ -8,6 +8,20 @@ import { GetTokens } from "./GetTokens.js";
 import { MarshalledArgsInit } from "./MarshalledArgsInit.js";
 import { PositionalTokenHandler } from "./PositionalTokenHandler.js";
 import { OptionTokenHandler } from "./OptionTokenHandler.js";
+import { TokenLoop } from "./TokenLoop.js";
+
+
+interface CommandContext {
+  command: CliType;
+  options: Map<ModelProperty, string>;
+  subcommandMap: Map<string, Operation>;
+}
+
+const CommandContext = createContext<CommandContext>()
+
+export function useCommand() {
+  return useContext(CommandContext)!;
+}
 
 export interface CommandArgParserProps {
   command: Operation | Namespace | Interface;
@@ -26,33 +40,14 @@ export function CommandArgParser({ command, options }: CommandArgParserProps) {
     subcommandMap.set(subcommand.name, subcommand);
   }
 
-  const optionTokenHandlers = Array.from(options.entries()).map(([option, path]) => (
-    <OptionTokenHandler option={option} path={path} />
-  ));
-
   return (
-    <>
+    <CommandContext.Provider value={{ command, options, subcommandMap }}>
       <Function name={`parse${command.name}Args`} parameters={{ args: "string[]" }}>
-        <GetTokens options={options} />
-        <MarshalledArgsInit command={command}/>
-        {code`
-          for (const token of tokens) {
-            if (token.kind === "positional") {
-              ${(<PositionalTokenHandler hasPositionals={false} subcommands={subcommandMap} />)}
-            } else if (token.kind === "option") {
-              switch (token.name) {
-                case "h":
-                case "help":
-                  ${command.name}Help();
-                  return;
-                ${optionTokenHandlers}
-              }
-            }
-          }
-          (handler.${command.name} as any)(... marshalledArgs);
-        `}
+        <GetTokens />
+        <MarshalledArgsInit />
+        <TokenLoop />
       </Function>
-      <HelpText command={command} options={options} subcommands={subcommandMap} />
+      <HelpText />
     </>
   );
 }

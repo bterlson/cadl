@@ -1,13 +1,12 @@
-import { Value } from "../../../../typescript/value.js";
-import { Model, ModelProperty } from "@typespec/compiler";
-import { CliType } from "#typespec-cli";
 import { code } from "#typespec/emitter/core";
+import { Model, ModelProperty } from "@typespec/compiler";
+import { Value } from "../../../../typescript/value.js";
+import { useCommand } from "./CommandArgParser.js";
 
-export interface MarshalledArgsInit {
-  command: CliType
-}
+export interface MarshalledArgsInit {}
 
-export function MarshalledArgsInit({command}: MarshalledArgsInit) {
+export function MarshalledArgsInit({}: MarshalledArgsInit) {
+  const { command } = useCommand();
   let defaultArgParams: ModelProperty[];
   if (command.kind === "Interface" || command.kind === "Namespace") {
     // todo: get "command" op for this command group.
@@ -16,10 +15,10 @@ export function MarshalledArgsInit({command}: MarshalledArgsInit) {
     defaultArgParams = [...command.parameters.properties.values()];
   }
   const defaultArgs = defaultArgParams.map((p) => buildDefaults(p));
-  
+
   return code`
     const marshalledArgs: any[] = ${(<Value jsValue={defaultArgs} />)};
-  `
+  `;
 }
 
 function buildDefaults(type: Model | ModelProperty) {

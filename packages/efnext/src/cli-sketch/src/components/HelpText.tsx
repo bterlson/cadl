@@ -7,6 +7,7 @@ import pc from "picocolors";
 import stripAnsi from "strip-ansi";
 import { useHelpers } from "../helpers.js";
 import { CliType } from "#typespec-cli";
+import { useCommand } from "./CommandArgParser/CommandArgParser.js";
 
 function removeHashAndBold(s: string) {
   return pc.bold(s.replace(/^#+ /, ""));
@@ -25,17 +26,14 @@ marked.use({
   breaks: false,
 });
 
-export interface HelpTextProps {
-  command: Operation | Interface | Namespace;
-  options: Map<ModelProperty, string>;
-  subcommands: Map<string, CliType>;
-}
+export interface HelpTextProps {}
 
 // TODO: Accumulate output in an array, join, and write with process.stdout.write.
 // output code should be a clsoe to a single process.stdout.write with a string.
 // although the tables will make that impossible to do entirely.
 
-export function HelpText({ command, options, subcommands }: HelpTextProps) {
+export function HelpText({}: HelpTextProps) {
+  const { command, options, subcommandMap } = useCommand();
   const helpers = useHelpers();
   const commandDoc = helpers.getDoc(command);
   const commandDesc = commandDoc
@@ -49,13 +47,13 @@ export function HelpText({ command, options, subcommands }: HelpTextProps) {
     .join("");
 
   let subcommandHelp = "";
-  if (subcommands.size > 0) {
+  if (subcommandMap.size > 0) {
     subcommandHelp += `
     const subcommandTable = new Table({
       chars: noFormatting,
     });
     `
-    subcommandHelp += [... subcommands.entries()].map(([name, cli]) => {
+    subcommandHelp += [... subcommandMap.entries()].map(([name, cli]) => {
       return pushSubcommandHelp(name, cli);
     }).join("");
 
