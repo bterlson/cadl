@@ -1,9 +1,16 @@
-import { EmitContext, Interface, Model, ModelProperty, Namespace, Operation, Program, Type, Union, navigateType } from "@typespec/compiler";
 import { EmitOutput, SourceFile, code, emit } from "#typespec/emitter/core";
-import { HelperContext, getStateHelpers } from "./helpers.js";
+import {
+  EmitContext,
+  Interface,
+  Model,
+  ModelProperty,
+  Namespace,
+  Operation,
+  Union,
+} from "@typespec/compiler";
 import { CommandArgParser } from "./components/CommandArgParser.js";
 import { ControllerInterface } from "./components/ControllerInterface.js";
-import { HelpText } from "./components/HelpText.js"
+import { HelperContext, getStateHelpers } from "./helpers.js";
 
 export type CliType = Namespace | Interface | Operation;
 
@@ -17,16 +24,17 @@ export async function $onEmit(context: EmitContext) {
   const clis = helpers.listClis() as CliType[];
   const cliSfs = [];
 
-  for (const cli of clis) {
-    
-    const subCommandClis = cli.kind === "Namespace" || cli.kind === "Interface" ? [... cli.operations.values()] : [];
+  for (let cli of clis) {
+    const subCommandClis =
+      cli.kind === "Namespace" || cli.kind === "Interface" ? [...cli.operations.values()] : [];
 
-    const parsers = [cli, ... subCommandClis].map(cli => {
-      const options = collectCommandOptions(cli);
-      return <CommandArgParser command={cli} options={options}/>
-    })
-    
-    
+    const parsers = [cli, ...subCommandClis].map((cli) => {
+      const mutatedCli =
+        cli.kind === "Operation" ? (helpers.toOptionsBag(cli).type as Operation) : cli;
+      const options = collectCommandOptions(mutatedCli);
+      return <CommandArgParser command={mutatedCli} options={options} />;
+    });
+
     cliSfs.push(
       <SourceFile path={cli.name + ".ts"} filetype="typescript">
         {code`
@@ -34,28 +42,24 @@ export async function $onEmit(context: EmitContext) {
           import Table from "cli-table3";
         `}
         <ControllerInterface cli={cli} />
-        
+
         {code`
           export function parseArgs(args: string[], handler: CommandInterface) {
             parse${cli.name}Args(args);
             ${parsers}
-          }`
-        }
+          }`}
       </SourceFile>
-    )
+    );
   }
-  
-  
-  emit(context,
+
+  emit(
+    context,
     <EmitOutput>
-      <HelperContext.Provider value={helpers}>
-        {cliSfs}
-      </HelperContext.Provider>
+      <HelperContext.Provider value={helpers}>{cliSfs}</HelperContext.Provider>
     </EmitOutput>
-  )
+  );
   console.timeEnd("emit");
 }
-
 
 export function collectCommandOptions(command: CliType): Map<ModelProperty, string> {
   if (command.kind === "Namespace" || command.kind === "Interface") {

@@ -11,7 +11,7 @@ export function InterfaceMember({ type }: InterfaceMemberProps) {
   if (isModelProperty(type)) {
     return (
       <>
-        "{type.name}": <TypeExpression type={type.type} />;
+        "{type.name}"{type.optional && "?"}: <TypeExpression type={type.type} />;
       </>
     );
   }

@@ -13,7 +13,7 @@ using TypeSpecCLI;
  */
 @cli interface TodoCLI {
   /** Create a todo item.*/
-  op create(todoItem: TodoItem): void;
+  op create(todoItem: TodoItem, @invertable color?: boolean): void;
   /** Finish a todo item. */
   op finish(@positional id: int32): void;
 }

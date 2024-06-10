@@ -29,6 +29,10 @@ interface ModelOptions {
   namespace?: Namespace;
 }
 
+interface ModelPropertyOptions {
+  optional?: boolean;
+}
+
 interface UnionVariantOptions {
   union?: Union;
 }
@@ -118,15 +122,19 @@ export function createTypeFactory(program: Program, realm?: Realm) {
       return model;
     },
 
-    modelProperty(...args: [...DecoratorArgs[], string, Type]): ModelProperty {
-      const opts = extractArgs<ModelProperty, never>(args);
+    modelProperty(
+      ...args:
+        | [...DecoratorArgs[], string, Type, ModelPropertyOptions]
+        | [...DecoratorArgs[], string, Type]
+    ): ModelProperty {
+      const opts = extractArgs<ModelProperty, ModelPropertyOptions>(args);
       const property: ModelProperty = program.checker.createType({
         kind: "ModelProperty",
         name: opts.name!,
         decorators: opts.decorators,
         type: opts.body,
         node: undefined as any,
-        optional: false,
+        optional: !!opts.options.optional,
       });
 
       finishType(property);

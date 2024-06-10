@@ -3,6 +3,7 @@ import { InterfaceDeclaration } from "../../../typescript/interface-declaration.
 import { InterfaceMember, TypeDeclaration } from "#typespec/emitter/typescript";
 import { isDeclaration } from "../../../framework/utils/typeguards.js";
 import { CliType } from "#typespec-cli";
+import { useHelpers } from "../helpers.js";
 
 export interface ControllerInterfaceProps {
   cli: CliType;
@@ -10,7 +11,7 @@ export interface ControllerInterfaceProps {
 
 export function ControllerInterface({ cli }: ControllerInterfaceProps) {
   const commands: Operation[] = [];
-
+  const helpers = useHelpers();
   if (cli.kind === "Interface" || cli.kind === "Namespace") {
     // TODO: Namespaces might have operation templates, probably need to find those?
     commands.push(... cli.operations.values());
@@ -22,7 +23,10 @@ export function ControllerInterface({ cli }: ControllerInterfaceProps) {
     <TypeDeclaration type={type} />
   ));
 
-  const memberDecls = commands.map(command => <InterfaceMember type={command} />)
+  const memberDecls = commands.map(command => {
+    const optionsBagForm = helpers.toOptionsBag(command);
+    return <InterfaceMember type={optionsBagForm.type as Operation} />
+  })
   return <>
     <InterfaceDeclaration name="CommandInterface">
       {`${cli.name}: () => void;`}

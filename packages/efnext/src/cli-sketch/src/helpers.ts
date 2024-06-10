@@ -1,5 +1,14 @@
 import { createContext, useContext } from "#typespec/emitter/core";
-import { EmitContext, Type, getDoc, isIntrinsicType } from "@typespec/compiler";
+import {
+  EmitContext,
+  Mutator,
+  MutatorFlow,
+  Operation,
+  Type,
+  getDoc,
+  isIntrinsicType,
+  mutateSubgraph,
+} from "@typespec/compiler";
 import { getShortName, hasShortName, isInvertable, isPositional, listClis } from "./decorators.js";
 
 export const HelperContext = createContext<ReturnType<typeof getStateHelpers>>();
@@ -30,5 +39,38 @@ export function getStateHelpers(context: EmitContext) {
     },
     getDoc: getDoc.bind(undefined, context.program),
     listClis: listClis.bind(undefined, context),
+    toOptionsBag(type: Operation) {
+      return mutateSubgraph(context.program, [optionsBagMutator], type);
+    },
   };
 }
+
+const optionsBagMutator: Mutator = {
+  name: "Optionals in options bag",
+  Model: {
+    filter() {
+      return MutatorFlow.DontRecurse;
+    },
+    mutate(m, clone, program, realm) {
+      const optionals = [...clone.properties.values()].filter((p) => p.optional);
+
+      if (optionals.length === 0) {
+        return;
+      }
+
+      const optionsBag = realm.typeFactory.model("", optionals);
+      const optionsProp = realm.typeFactory.modelProperty("options", optionsBag, {
+        optional: true,
+      });
+      console.log(optionsProp);
+
+      for (const [key, prop] of clone.properties) {
+        if (prop.optional) {
+          clone.properties.delete(key);
+        }
+      }
+
+      clone.properties.set("options", optionsProp);
+    },
+  },
+};
