@@ -1,6 +1,6 @@
+import { code } from "#typespec/emitter/core";
 import { ModelProperty } from "@typespec/compiler";
 import { useHelpers } from "../../helpers.js";
-import { code } from "#typespec/emitter/core";
 
 export interface OptionTokenHandlerProps {
   option: ModelProperty;
