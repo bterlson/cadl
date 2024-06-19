@@ -1,0 +1,1 @@
+namespace Typespec.TypeScript.RlcEmitter;

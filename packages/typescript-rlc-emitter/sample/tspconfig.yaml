@@ -1,0 +1,6 @@
+emit:
+  - "@typespec/typescript-rlc-emitter"
+
+options:
+  "@typespec/typescript-rlc-emitter":
+    emitter-output-dir: "{project-root}/generated"

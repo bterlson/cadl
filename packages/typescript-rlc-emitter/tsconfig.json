@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "references": [{ "path": "../compiler/tsconfig.json" }],
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": ".",
+    "tsBuildInfoFile": "temp/tsconfig.tsbuildinfo",
+    "jsx": "react-jsx",
+    "jsxImportSource": "@typespec/efnext",
+    "sourceMap": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/**/*.tsx",
+    "generated-defs/**/*.ts",
+    "test/**/*.ts",
+    "test/**/*.tsx",
+    "src/index.tsx",
+    "test/hello.test.tsx"
+  ]
+}
