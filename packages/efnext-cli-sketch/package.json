@@ -30,10 +30,10 @@
   },
   "scripts": {
     "clean": "rimraf ./dist ./temp",
-    "build-src": "babel src -d dist/src --extensions '.ts,.tsx'",
+    "build-src": "babel src -d dist/src --extensions .ts,.tsx",
     "build-tsc": "tsc -p .",
     "build": "npm run gen-extern-signature && npm run build-src && npm run build-tsc && npm run lint-typespec-library",
-    "watch-src": "babel src -d dist/src --extensions '.ts,.tsx' --watch",
+    "watch-src": "babel src -d dist/src --extensions .ts,.tsx --watch",
     "watch-tsc": "tsc -p . --watch",
     "watch": "concurrently --kill-others \"npm run watch-tsc\" \"npm run watch-src\"",
     "gen-extern-signature": "tspd --enable-experimental gen-extern-signature .",
@@ -78,8 +78,8 @@
     "vitest": "^1.6.0"
   },
   "dependencies": {
-    "@alloy-js/core": "0.2.0",
-    "@alloy-js/typescript": "0.2.0",
+    "@alloy-js/core": "0.3.0",
+    "@alloy-js/typescript": "0.3.0",
     "@typespec/emitter-framework": "workspace:~",
     "change-case": "~5.4.4",
     "cli-table3": "^0.6.5",

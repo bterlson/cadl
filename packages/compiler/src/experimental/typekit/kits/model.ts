@@ -1,5 +1,6 @@
 import { getEffectiveModelType } from "../../../core/checker.js";
 import type { Model, ModelProperty, SourceModel, Type } from "../../../core/types.js";
+import { isErrorModel } from "../../../lib/decorators.js";
 import { createRekeyableMap } from "../../../utils/misc.js";
 import { defineKit } from "../define-kit.js";
 import { decoratorApplication, DecoratorArgs } from "../utils.js";
@@ -57,6 +58,13 @@ export interface ModelKit {
     isExpresion(type: Model): boolean;
 
     /**
+     * Check if the model is an error model as declared by the `@error` decorator.
+     *
+     * @param type The model to check.
+     */
+    isErrorModel(type: Model): boolean;
+
+    /**
      * If the input is anonymous (or the provided filter removes properties)
      * and there exists a named model with the same set of properties
      * (ignoring filtered properties), then return that named model.
@@ -105,6 +113,9 @@ export const ModelKit = defineKit<ModelKit>({
 
     isExpresion(type) {
       return type.name === "";
+    },
+    isErrorModel(type: Model): boolean {
+      return isErrorModel(this.program, type);
     },
     getEffectiveModel(model, filter?: (property: ModelProperty) => boolean) {
       return getEffectiveModelType(this.program, model, filter);

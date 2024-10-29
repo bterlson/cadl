@@ -131,6 +131,10 @@ export class TypeCollector {
     for (const prop of type.properties.values()) {
       this.#collectFromType(prop.type);
     }
+
+    if (type.baseModel) {
+      this.#collectFromType(type.baseModel);
+    }
   }
 
   #collectFromOperation(type: Operation): void {

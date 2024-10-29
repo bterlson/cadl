@@ -1,5 +1,5 @@
 {
-  "name": "emitter-sample",
+  "name": "java-spring",
   "version": "1.0.0",
   "type": "module",
   "private": true,
@@ -10,23 +10,26 @@
     "watch-src": "babel src -d dist/src --extensions .ts,.tsx --watch",
     "watch-tsc": "tsc -p . --watch",
     "watch": "concurrently --kill-others \"npm run watch-tsc\" \"npm run watch-src\"",
-    "test": "vitest run"
+    "test": "vitest run",
+    "format": "prettier --write ."
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "peerDependencies": {
-    "@typespec/compiler": "workspace:*"
+    "@typespec/compiler": "workspace:*",
+    "@typespec/http": "workspace:*",
+    "@typespec/rest": "workspace:*",
+    "@typespec/emitter-framework": "workspace:*"
   },
   "dependencies": {
-    "@typespec/emitter-framework": "workspace:*",
     "@alloy-js/core": "0.3.0",
-    "@alloy-js/typescript": "0.3.0"
+    "@alloy-js/java": "0.3.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.24.8",
-    "@babel/core": "^7.24.9",
+    "@babel/cli": "^7.25.6",
+    "@babel/core": "^7.25.2",
     "@rollup/plugin-babel": "^6.0.4",
     "@alloy-js/babel-preset": "0.1.1",
     "concurrently": "^8.2.2",

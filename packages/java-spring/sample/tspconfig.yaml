@@ -1,0 +1,18 @@
+emit:
+  - 'java-spring'
+
+# Example options this emitter can take
+options:
+  java-spring:
+    # The spring version used in generated code
+    springVersion: 3.3.3
+    # The java version declared in maven config for compiling
+    javaVersion: 8
+    # The package all java code is emitted to
+    package: io.typespec.generated
+    # The maven groupId for the generated project
+    groupId: io.typespec
+    # The maven artifactId for the generated project
+    artifactId: generated
+    # The maven version for the generated project
+    version: 1.0.0

@@ -29,8 +29,8 @@
     "@typespec/openapi3": "workspace:*"
   },
   "dependencies": {
-    "@alloy-js/core": "0.2.0",
-    "@alloy-js/typescript": "0.2.0",
+    "@alloy-js/core": "0.3.0",
+    "@alloy-js/typescript": "0.3.0",
     "@azure-tools/typespec-client-generator-core": "0.47.3"
   },
   "devDependencies": {

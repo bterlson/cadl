@@ -2,6 +2,7 @@ export { ResolveCompilerOptionsOptions, resolveCompilerOptions } from "./config/
 export * from "./core/index.js";
 export * from "./lib/decorators.js";
 export * from "./server/index.js";
+export * from "./typekit/index.js";
 import * as formatter from "./formatter/index.js";
 export const TypeSpecPrettierPlugin = formatter;
 

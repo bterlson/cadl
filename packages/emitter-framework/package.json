@@ -5,9 +5,9 @@
   "private": true,
   "main": "dist/index.js",
   "scripts": {
-    "build-src": "babel src -d dist/src --extensions '.ts,.tsx'",
+    "build-src": "babel src -d dist/src --extensions .ts,.tsx",
     "build": "tsc -p . && npm run build-src",
-    "watch-src": "babel src -d dist/src --extensions '.ts,.tsx' --watch",
+    "watch-src": "babel src -d dist/src --extensions .ts,.tsx --watch",
     "watch-tsc": "tsc -p . --watch",
     "watch": "concurrently --kill-others \"npm run watch-tsc\" \"npm run watch-src\"",
     "test": "vitest run"
@@ -20,6 +20,10 @@
     "./typescript": {
       "node": "./dist/src/typescript/index.js",
       "types": "./dist/src/typescript/index.d.ts"
+    },
+    "./java": {
+      "node": "./dist/src/java/index.js",
+      "types": "./dist/src/java/index.d.ts"
     },
     "./testing": {
       "node": "./dist/src/testing/index.js",
@@ -36,8 +40,9 @@
     "@typespec/http": "workspace:~"
   },
   "dependencies": {
-    "@alloy-js/core": "0.2.0",
-    "@alloy-js/typescript": "0.2.0"
+    "@alloy-js/core": "0.3.0",
+    "@alloy-js/typescript": "0.3.0",
+    "@alloy-js/java": "0.3.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.24.8",
