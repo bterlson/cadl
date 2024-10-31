@@ -36,8 +36,8 @@
     "@typespec/http": "workspace:~"
   },
   "dependencies": {
-    "@alloy-js/core": "0.2.0",
-    "@alloy-js/typescript": "0.2.0"
+    "@alloy-js/core": "https://pkg.pr.new/alloy-framework/alloy/@alloy-js/core@75a4268   ",
+    "@alloy-js/typescript": "https://pkg.pr.new/alloy-framework/alloy/@alloy-js/typescript@75a4268   "
   },
   "devDependencies": {
     "@babel/cli": "^7.24.8",

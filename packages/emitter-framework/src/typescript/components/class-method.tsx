@@ -1,6 +1,6 @@
 import * as ts from "@alloy-js/typescript";
 import { Operation } from "@typespec/compiler";
-import {refkey as getRefkey} from "@alloy-js/core"
+import { refkey as getRefkey, defineSlot, resolveFQN } from "@alloy-js/core"
 import { TypeExpression } from "./type-expression.jsx";
 import { buildParameterDescriptors, getReturnType } from "../utils/operation.js";
 
@@ -10,6 +10,10 @@ export interface ClassMethodPropsWithType extends Omit<ts.ClassMethodProps, "nam
 }
 
 export type ClassMethodProps = ClassMethodPropsWithType | ts.ClassMethodProps;
+
+export const ClientMethodSlot = defineSlot(
+  (fqn: string) => resolveFQN(fqn),
+)
 
 export function ClassMethod(props: ClassMethodProps) {
   if (!isTypedMethodDeclarationProps(props)) {

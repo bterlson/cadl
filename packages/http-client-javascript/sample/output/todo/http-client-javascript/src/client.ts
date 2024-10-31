@@ -23,7 +23,7 @@ export class TodoItemsClient {
     this.#context = context;
     this.attachments = new AttachmentsClient(this.#context);
   }
-  list(options?: { limit?: number; offset?: number }) {
+  listItems2(options?: { limit?: number; offset?: number }) {
     return list(this.#context, options);
   }
 

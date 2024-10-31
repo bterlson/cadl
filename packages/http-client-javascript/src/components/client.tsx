@@ -1,4 +1,4 @@
-import { refkey as getRefkey, mapJoin, refkey } from "@alloy-js/core";
+import { defineSlot, refkey as getRefkey, mapJoin, refkey, resolveFQN } from "@alloy-js/core";
 import * as ts from "@alloy-js/typescript";
 import { Interface, Namespace, Operation, Service } from "@typespec/compiler";
 import { ClassMethod } from "@typespec/emitter-framework/typescript";
@@ -47,6 +47,9 @@ function getClientlets(rootNamespace: Namespace): (Namespace | Interface)[] {
   return Array.from(clientlets);
 }
 
+export const ExtraClientMethodsSlot = defineSlot<ClientProps>((query: { name: string }) =>
+  resolveFQN(query.name));
+
 export interface ClientProps {
   name?: string;
   clientlet?: boolean;
@@ -68,7 +71,8 @@ export function Client(props: ClientProps) {
   ) : (
     <> <ts.Reference refkey={thisContext} /> = <ts.FunctionCallExpression refkey={ClientContextFactoryRefkey} args={paramsInit} /></>
   );
-
+  const sym = childDeclarationSymbol();
+  const ExtraClientMethodsSlotInstance = ExtraClientMethodsSlot.create(sym, props);
   return <ts.ClassDeclaration export name={className} refkey={getClientletClassRefkey(props.type)}>
   {mapJoin(clientlets, (namespace) => <ClientletField type={namespace} />, {joiner: "\n"})}
   <ts.ClassField name="context" jsPrivate={true} refkey={thisContext} type={<ts.Reference refkey={ClientContextRefkey} />}/>
@@ -81,6 +85,7 @@ export function Client(props: ClientProps) {
       }, {joiner: "\n"})}
     </ts.ClassMethod>
     <OperationClassMethods operations={methods} />
+    <ExtraClientMethodsSlotInstance />
 </ts.ClassDeclaration>;
 }
 

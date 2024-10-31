@@ -36,38 +36,38 @@
     "sync-labels": "tsx ./eng/common/scripts/labels/sync-labels.ts  --config ./eng/common/config/labels.ts"
   },
   "devDependencies": {
+    "@alloy-js/prettier-plugin-alloy": "0.1.0",
     "@chronus/chronus": "^0.12.1",
-    "@chronus/github": "^0.4.3",
-    "@eslint/js": "^9.10.0",
-    "@microsoft/api-extractor": "^7.47.9",
+    "@chronus/github": "^0.4.4",
+    "@eslint/js": "^9.13.0",
+    "@microsoft/api-extractor": "^7.47.11",
     "@octokit/core": "^6.1.2",
-    "@octokit/plugin-paginate-graphql": "^5.2.2",
-    "@octokit/plugin-rest-endpoint-methods": "^13.2.4",
+    "@octokit/plugin-paginate-graphql": "^5.2.4",
+    "@octokit/plugin-rest-endpoint-methods": "^13.2.6",
     "@pnpm/find-workspace-packages": "^6.0.9",
     "@types/micromatch": "^4.0.9",
-    "@types/node": "~22.5.4",
-    "@typescript-eslint/parser": "^8.5.0",
-    "@typescript-eslint/utils": "^8.5.0",
-    "@vitest/coverage-v8": "^2.1.0",
+    "@types/node": "~22.5.5",
+    "@typescript-eslint/parser": "^8.12.2",
+    "@typescript-eslint/utils": "^8.12.2",
+    "@vitest/coverage-v8": "^2.1.4",
     "c8": "^10.1.2",
-    "cspell": "^8.14.2",
-    "eslint": "^9.10.0",
+    "cspell": "^8.15.5",
+    "eslint": "^9.13.0",
     "eslint-plugin-deprecation": "^3.0.0",
-    "eslint-plugin-import": "^2.30.0",
-    "eslint-plugin-react-hooks": "^5.1.0-rc-94e652d5-20240912",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-react-hooks": "5.1.0-rc-fb9a90fa48-20240614",
     "eslint-plugin-unicorn": "^55.0.0",
     "eslint-plugin-vitest": "^0.5.4",
     "micromatch": "^4.0.8",
-    "picocolors": "~1.1.0",
+    "picocolors": "~1.1.1",
     "prettier": "~3.3.3",
     "prettier-plugin-organize-imports": "~4.0.0",
-    "@alloy-js/prettier-plugin-alloy": "0.1.0",
     "rimraf": "~6.0.1",
     "syncpack": "^13.0.0",
-    "tsx": "^4.19.1",
-    "typescript": "~5.6.2",
-    "typescript-eslint": "^8.5.0",
-    "vitest": "^2.1.0",
+    "tsx": "^4.19.2",
+    "typescript": "~5.6.3",
+    "typescript-eslint": "^8.12.2",
+    "vitest": "^2.1.4",
     "yaml": "~2.5.1"
   },
   "syncpack": {
@@ -83,7 +83,9 @@
   "pnpm": {
     "overrides": {
       "@fluentui/react-theme": "9.1.17",
-      "esbuild": "0.23"
+      "esbuild": "0.23",
+      "@alloy-js/core": "https://pkg.pr.new/alloy-framework/alloy/@alloy-js/core@75a4268   ",
+      "@alloy-js/typescript": "https://pkg.pr.new/alloy-framework/alloy/@alloy-js/typescript@75a4268   "
     }
   }
 }

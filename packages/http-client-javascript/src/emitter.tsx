@@ -28,6 +28,9 @@ import {
 export async function $onEmit(context: EmitContext) {
   const visited = operationWalker(context);
   const tsNamePolicy = ts.createTSNamePolicy();
+
+  await import("./extension.js");
+
   const service: Service | undefined = listServices(context.program)[0];
   return <ay.Output namePolicy={tsNamePolicy} externals={[uriTemplateLib]}>
       <ts.PackageDirectory name="test-package" version="1.0.0" path=".">
@@ -52,6 +55,9 @@ export async function $onEmit(context: EmitContext) {
           </ay.SourceDirectory>
         </ay.SourceDirectory>
       </ts.PackageDirectory>
+      {() => {
+        console.log([... ay.useBinder().globalScope.children][1]);
+      }}
     </ay.Output>;
 }
 
