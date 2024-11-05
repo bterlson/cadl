@@ -84,8 +84,8 @@
     "overrides": {
       "@fluentui/react-theme": "9.1.17",
       "esbuild": "0.23",
-      "@alloy-js/core": "https://pkg.pr.new/alloy-framework/alloy/@alloy-js/core@75a4268   ",
-      "@alloy-js/typescript": "https://pkg.pr.new/alloy-framework/alloy/@alloy-js/typescript@75a4268   "
+      "@alloy-js/core": "https://pkg.pr.new/alloy-framework/alloy/@alloy-js/core@17eae24   ",
+      "@alloy-js/typescript": "https://pkg.pr.new/alloy-framework/alloy/@alloy-js/typescript@17eae24   "
     }
   }
 }

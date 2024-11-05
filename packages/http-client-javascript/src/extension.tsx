@@ -1,17 +1,12 @@
-import { code, rename, replace, resolveFQN } from "@alloy-js/core";
+import { code, replace } from "@alloy-js/core";
 import { ExtraClientMethodsSlot } from "./components/client.jsx";
 
-const listFn = resolveFQN("test-package.src/client_ts.TodoItemsClient#list");
-rename(listFn, "listItems");
-
-const todoItemClientSlot = ExtraClientMethodsSlot.find(
-  "test-package.src/client_ts.TodoItemsClient",
-);
+const todoItemClientSlot = ExtraClientMethodsSlot.find({
+  name: "test-package.src/client_ts.TodoItems",
+});
 
 replace(todoItemClientSlot, (props) => {
   return code`
-    function foo() {
-      console.log("hello world");
-    }
+    this is added code!
   `;
 });

@@ -1,11 +1,13 @@
 export interface TodoContext {
-  endpoint: string;
+  endpoint: string
 }
 export interface TodoOptions {
-  endpoint?: string;
+  
+  endpoint?: string
 }
 export function createTodoContext(endpoint: string, options?: TodoOptions): TodoContext {
-  return {
-    endpoint,
+  
+  return { 
+  endpoint 
   };
 }

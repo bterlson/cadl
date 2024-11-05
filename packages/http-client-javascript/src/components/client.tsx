@@ -1,4 +1,12 @@
-import { defineSlot, refkey as getRefkey, mapJoin, refkey, resolveFQN } from "@alloy-js/core";
+import {
+  code,
+  defineSlot,
+  refkey as getRefkey,
+  mapJoin,
+  OutputSymbolFlags,
+  refkey,
+  resolveFQN,
+} from "@alloy-js/core";
 import * as ts from "@alloy-js/typescript";
 import { Interface, Namespace, Operation, Service } from "@typespec/compiler";
 import { ClassMethod } from "@typespec/emitter-framework/typescript";
@@ -71,22 +79,36 @@ export function Client(props: ClientProps) {
   ) : (
     <> <ts.Reference refkey={thisContext} /> = <ts.FunctionCallExpression refkey={ClientContextFactoryRefkey} args={paramsInit} /></>
   );
-  const sym = childDeclarationSymbol();
-  const ExtraClientMethodsSlotInstance = ExtraClientMethodsSlot.create(sym, props);
-  return <ts.ClassDeclaration export name={className} refkey={getClientletClassRefkey(props.type)}>
-  {mapJoin(clientlets, (namespace) => <ClientletField type={namespace} />, {joiner: "\n"})}
-  <ts.ClassField name="context" jsPrivate={true} refkey={thisContext} type={<ts.Reference refkey={ClientContextRefkey} />}/>
-    <ts.ClassMethod name="constructor" parameters={clientParameters}>
-     {contextInit}
-      {mapJoin(clientlets, (namespace) => {
-        return <>
-          <ts.Reference refkey={getClientletFieldRefkey(namespace)} /> = new <ts.Reference refkey={getClientletClassRefkey(namespace)} />({thisContext});
-        </>
-      }, {joiner: "\n"})}
-    </ts.ClassMethod>
-    <OperationClassMethods operations={methods} />
-    <ExtraClientMethodsSlotInstance />
-</ts.ClassDeclaration>;
+
+  const sym = ts.createTSSymbol({
+    name: namePolicy.getName(name, "class"),
+    refkey: getClientletClassRefkey(props.type),
+    export: true,
+    flags: OutputSymbolFlags.MemberContainer,
+  });
+
+  const ExtraClientMethodsSlotInstance = ExtraClientMethodsSlot.create(
+    sym,
+    props,
+    code`
+      // extra methods go here  
+    `,
+  );
+
+  return <ts.ClassDeclaration symbol={sym} name={className}>
+    {mapJoin(clientlets, (namespace) => <ClientletField type={namespace} />, {joiner: "\n"})}
+      <ts.ClassField name="context" jsPrivate={true} refkey={thisContext} type={<ts.Reference refkey={ClientContextRefkey} />}/>
+      <ts.ClassMethod name="constructor" parameters={clientParameters}>
+      {contextInit}
+        {mapJoin(clientlets, (namespace) => {
+          return <>
+            <ts.Reference refkey={getClientletFieldRefkey(namespace)} /> = new <ts.Reference refkey={getClientletClassRefkey(namespace)} />({thisContext});
+          </>
+        }, {joiner: "\n"})}
+      </ts.ClassMethod>
+      <OperationClassMethods operations={methods} />
+      <ExtraClientMethodsSlotInstance />
+  </ts.ClassDeclaration>;
 }
 
 export interface ClientletFieldProps {
