@@ -14,6 +14,13 @@ export function EnglishClient(props: ClientProps) {
       <ay.Indent>
         <EnglishOperation client={props.client} operation={$.client.getConstructor(props.client)} />
       </ay.Indent>
+      <ay.Indent>
+        {ay.mapJoin(
+          $.client.listServiceOperations(props.client),
+          (operation) => <EnglishOperation client={props.client} operation={operation} />,
+          { joiner: "\n" },
+        )}
+      </ay.Indent>
     </ay.SourceFile>
   );
 }

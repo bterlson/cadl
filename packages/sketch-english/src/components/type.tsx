@@ -10,13 +10,11 @@ export function EnglishType(props: TypeProps) {
   }
   switch (props.type.kind) {
     case "Model":
-      return <>Model "{props.type.name}"</>;
     case "Scalar":
+    case "Intrinsic":
       return props.type.name;
     case "String":
       return props.type.value;
-    case "Intrinsic":
-      return props.type.name;
     default:
       return <>Unknown type {props.type.kind}</>;
   }
