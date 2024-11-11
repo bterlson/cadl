@@ -10,7 +10,7 @@ export interface ClientProps {
 export function EnglishClient(props: ClientProps) {
   return (
     <ay.SourceFile path={$.client.getName(props.client)} filetype="txt">
-      Hello, I am a client "{$.client.getName(props.client)}"
+      Client "{$.client.getName(props.client)}"
       <ay.Indent>
         <EnglishOperation client={props.client} operation={$.client.getConstructor(props.client)} />
       </ay.Indent>
