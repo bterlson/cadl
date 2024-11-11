@@ -1,6 +1,6 @@
 import * as ay from "@alloy-js/core";
-import { $ } from "@typespec/compiler/typekit";
 import { Client } from "@typespec/http-client-library";
+import { ClientComponent, useClientContext } from "../utils/contexts/client-context.jsx";
 import { EnglishOperation } from "./operation.js";
 
 export interface ClientProps {
@@ -9,15 +9,26 @@ export interface ClientProps {
 
 export function EnglishClient(props: ClientProps) {
   return (
-    <ay.SourceFile path={$.client.getName(props.client)} filetype="txt">
-      Client "{$.client.getName(props.client)}"
+    <ClientComponent client={props.client}>
+      <EnglishClientInternal client={props.client} />
+    </ClientComponent>
+  );
+}
+
+function EnglishClientInternal(props: ClientProps) {
+  const client = useClientContext();
+  return (
+    <ay.SourceFile path={client.getName()} filetype="txt">
+      Client "{client.getName()}"
       <ay.Indent>
-        <EnglishOperation client={props.client} operation={$.client.getConstructor(props.client)} />
+        <EnglishOperation operation={client.getConstructor()} />
       </ay.Indent>
       <ay.Indent>
         {ay.mapJoin(
-          $.client.listServiceOperations(props.client),
-          (operation) => <EnglishOperation client={props.client} operation={operation} />,
+          client.listServiceOperations(),
+          (operation) => (
+            <EnglishOperation operation={operation} />
+          ),
           { joiner: "\n" },
         )}
       </ay.Indent>
