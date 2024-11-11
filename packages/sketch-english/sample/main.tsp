@@ -9,7 +9,7 @@ using JsonSchema;
 @service({
   title: "Todo App",
 })
-@useAuth(BearerAuth | ApiKeyAuth<ApiKeyLocation.cookie, "session-id">)
+@useAuth(BearerAuth)
 @jsonSchema
 namespace Todo;
 
