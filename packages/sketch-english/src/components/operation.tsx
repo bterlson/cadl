@@ -2,7 +2,8 @@ import * as ay from "@alloy-js/core";
 import { Operation } from "@typespec/compiler";
 import { $ } from "@typespec/compiler/typekit";
 import { Client } from "@typespec/http-client-library";
-import { EnglishType } from "./type.jsx";
+import { getEnglishTypeName } from "../utils/utils.js";
+import { EnglishProp } from "./prop.js";
 
 export interface OperationProps {
   client: Client;
@@ -17,15 +18,13 @@ export function EnglishOperation(props: OperationProps) {
         {ay.mapJoin(
           $.operation.getClientSignature(props.client, props.operation),
           (prop) => (
-            <>
-              Input "{prop.name}" with type "<EnglishType type={prop.type} />"
-            </>
+            <EnglishProp prop={prop} />
           ),
           { joiner: "\n" },
         )}
       </ay.Indent>
       <ay.Indent>
-        Return type "<EnglishType type={$.operation.getValidReturnType(props.operation)} />"
+        Return type "{getEnglishTypeName($.operation.getValidReturnType(props.operation))}"
       </ay.Indent>
     </>
   );
