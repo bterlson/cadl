@@ -1,31 +1,25 @@
 import * as ay from "@alloy-js/core";
 import { Operation } from "@typespec/compiler";
 import { $ } from "@typespec/compiler/typekit";
-import { OperationComponent, useOperationContext } from "../utils/contexts/operation-context.jsx";
-import { getEnglishTypeName } from "../utils/utils.js";
-import { EnglishProp } from "./prop.js";
+import { Client } from "@typespec/http-client-library";
+import { EnglishProp } from "./model-property.jsx";
+import { getEnglishTypeName } from "../utils.js";
 
-export interface OperationProps {
+interface OperationProps {
+  client: Client;
   operation: Operation;
 }
 
 export function EnglishOperation(props: OperationProps) {
-  const operationContext = useOperationContext();
   return (
-    <OperationComponent operation={props.operation}>
-      Operation "{props.operation.name}"
+    <ay.SourceFile path={props.operation.name} filetype="txt">
+      Hello, I am operation "{props.operation.name}"!
       <ay.Indent>
-        {ay.mapJoin(
-          operationContext.getClientSignature(),
-          (prop) => (
-            <EnglishProp prop={prop} />
-          ),
-          { joiner: "\n" },
-        )}
+        {ay.mapJoin($.operation.getClientSignature(props.client, props.operation), (p) => (
+          <EnglishProp modelProperty={p} />
+        ))}
+        I have return type {getEnglishTypeName($.operation.getValidReturnType(props.operation))}
       </ay.Indent>
-      <ay.Indent>
-        Return type "{getEnglishTypeName($.operation.getValidReturnType(props.operation))}"
-      </ay.Indent>
-    </OperationComponent>
+    </ay.SourceFile>
   );
 }

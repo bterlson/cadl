@@ -11,17 +11,13 @@ interface NamespaceProps {
 export function EnglishNamespace(props: NamespaceProps) {
   return (
     <ay.SourceDirectory path={props.namespace.name}>
-      {$.clientLibrary.listClients(props.namespace).map((client) => (
+      {ay.mapJoin($.clientLibrary.listClients(props.namespace), (client) => (
         <EnglishClient client={client} />
       ))}
       <ay.SourceFile path="models" filetype="txt">
-        {ay.mapJoin(
-          $.clientLibrary.listModels(props.namespace),
-          (model) => (
-            <EnglishModel model={model} />
-          ),
-          { joiner: "\n" },
-        )}
+        {ay.mapJoin($.clientLibrary.listModels(props.namespace), (model) => (
+          <EnglishModel model={model} />
+        ))}
       </ay.SourceFile>
     </ay.SourceDirectory>
   );

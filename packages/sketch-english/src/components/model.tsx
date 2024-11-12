@@ -1,24 +1,20 @@
 import * as ay from "@alloy-js/core";
 import { Model } from "@typespec/compiler";
 import { $ } from "@typespec/compiler/typekit";
-import { EnglishProp } from "./prop.jsx";
+import { EnglishProp } from "./model-property.jsx";
 
-export interface ModelProps {
+interface ModelProps {
   model: Model;
 }
 
 export function EnglishModel(props: ModelProps) {
   return (
     <>
-      Model "{props.model.name}"
+      Hello, I am model "{props.model.name}"!
       <ay.Indent>
-        {ay.mapJoin(
-          $.model.listProperties(props.model),
-          (prop) => (
-            <EnglishProp prop={prop} />
-          ),
-          { joiner: "\n" },
-        )}
+        {ay.mapJoin($.model.listProperties(props.model), (property) => (
+          <EnglishProp modelProperty={property} />
+        ))}
       </ay.Indent>
     </>
   );

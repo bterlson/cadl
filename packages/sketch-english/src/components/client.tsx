@@ -1,36 +1,24 @@
 import * as ay from "@alloy-js/core";
+import { $ } from "@typespec/compiler/typekit";
 import { Client } from "@typespec/http-client-library";
-import { ClientComponent, useClientContext } from "../utils/contexts/client-context.jsx";
-import { EnglishOperation } from "./operation.js";
+import { EnglishOperation } from "./operation.jsx";
 
-export interface ClientProps {
+interface ClientProps {
   client: Client;
 }
 
 export function EnglishClient(props: ClientProps) {
+  const constructor = $.client.getConstructor(props.client);
   return (
-    <ClientComponent client={props.client}>
-      <EnglishClientInternal client={props.client} />
-    </ClientComponent>
-  );
-}
-
-function EnglishClientInternal(props: ClientProps) {
-  const client = useClientContext();
-  return (
-    <ay.SourceFile path={client.getName()} filetype="txt">
-      Client "{client.getName()}"
+    <ay.SourceFile path={props.client.name} filetype="txt">
+      Hello, I am client "{props.client.name}"!
       <ay.Indent>
-        <EnglishOperation operation={client.getConstructor()} />
+        <EnglishOperation client={props.client} operation={constructor} />
       </ay.Indent>
       <ay.Indent>
-        {ay.mapJoin(
-          client.listServiceOperations(),
-          (operation) => (
-            <EnglishOperation operation={operation} />
-          ),
-          { joiner: "\n" },
-        )}
+        {ay.mapJoin($.client.listServiceOperations(props.client), (operation) => (
+          <EnglishOperation client={props.client} operation={operation} />
+        ))}
       </ay.Indent>
     </ay.SourceFile>
   );

@@ -12,7 +12,6 @@ namespace Petstore;
 model Pet {
   @key
   id: string;
-
   name: string;
   favoriteToy: Toy;
 }
