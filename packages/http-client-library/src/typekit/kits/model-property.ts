@@ -1,26 +1,45 @@
-import { BaseType, ModelProperty } from "@typespec/compiler";
-import { defineKit } from "@typespec/compiler/typekit";
-import { HttpAuth } from "@typespec/http";
+import { BaseType, ModelProperty, Value } from "@typespec/compiler";
+import { $, defineKit } from "@typespec/compiler/typekit";
+import { getAuthentication, HttpAuth } from "@typespec/http";
+import { Client } from "../../interfaces.js";
+import { AccessKit, getAccess, getName, NameKit } from "./utils.js";
 
 export interface SdkCredential extends BaseType {
   kind: "Credential";
   scheme: HttpAuth;
 }
 
-export interface SdkModelPropertyKit {
+export interface SdkModelPropertyKit extends NameKit<ModelProperty>, AccessKit<ModelProperty> {
   /**
-   * Returns whether it's an endpoint parameter or not.
-   *
-   * @param type whether it's an endpoint parameter or not
+   * Get credential information from the model property. Returns undefined if the credential parameter
    */
-  isEndpoint(type: ModelProperty): boolean;
+  getCredentialAuth(client: Client, type: ModelProperty): HttpAuth[] | undefined;
 
+  /**
+   * Returns whether the property is a discriminator on the model it's on.
+   */
+  isDiscriminator(type: ModelProperty): boolean;
   /**
    * Returns whehter it's a credential parameter or not.
    *
    * @param type: model property we are checking to see if is a credential parameter
    */
-  isCredential(type: ModelProperty): boolean;
+  isCredential(client: Client, modelProperty: ModelProperty): boolean;
+
+  /**
+   * Returns whether the model property is part of the client's initialization or not.
+   */
+  isOnClient(modelProperty: ModelProperty): boolean;
+
+  /**
+   * Returns whether the model property has a client default value or not.
+   */
+  getClientDefaultValue(client: Client, modelProperty: ModelProperty): Value | undefined;
+
+  /**
+   * Get access of a property
+   */
+  getAccess(modelProperty: ModelProperty): "public" | "internal";
 }
 
 interface TypeKit {
@@ -34,11 +53,42 @@ declare module "@typespec/compiler/typekit" {
 
 defineKit<TypeKit>({
   modelProperty: {
-    isEndpoint(type) {
-      return type.name === "endpoint";
+    isCredential(modelProperty) {
+      return modelProperty.name === "credential";
     },
-    isCredential(type) {
-      return type.name === "credential";
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    isOnClient(modelProperty) {
+      return false;
+    },
+    getClientDefaultValue(client, modelProperty) {
+      const clientParams = $.operation.getClientSignature(client, $.client.getConstructor(client));
+      const clientParam = clientParams.find((p) => p.name === modelProperty.name);
+      if (clientParam) {
+        return clientParam.defaultValue;
+      }
+      return undefined;
+    },
+    getCredentialAuth(client, type) {
+      const clientConstructor = $.client.getConstructor(client);
+      const params = $.operation.getClientSignature(client, clientConstructor);
+      const isCredential = params.find((p) => p.name === "credential" && p === type);
+      if (!isCredential || type.type.kind !== "String") return undefined;
+      const scheme = type.type.value;
+      return getAuthentication($.program, client.service)
+        ?.options.flatMap((o) => o.schemes)
+        .filter((s) => s.type === scheme);
+    },
+    isDiscriminator(type) {
+      const sourceModel = type.model;
+      if (!sourceModel) return false;
+      const disc = $.model.getDiscriminatorProperty(sourceModel);
+      return disc === type;
+    },
+    getAccess(modelProperty) {
+      return getAccess(modelProperty);
+    },
+    getName(modelProperty) {
+      return getName(modelProperty);
     },
   },
 });

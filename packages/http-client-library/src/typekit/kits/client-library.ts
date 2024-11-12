@@ -1,4 +1,11 @@
-import { Enum, listServices, Model, Namespace } from "@typespec/compiler";
+import {
+  Enum,
+  getLocationContext,
+  Interface,
+  listServices,
+  Model,
+  Namespace,
+} from "@typespec/compiler";
 import { $, defineKit } from "@typespec/compiler/typekit";
 import { Client } from "../../interfaces.js";
 
@@ -6,22 +13,17 @@ interface ClientLibraryKit {
   /**
    * Get the top-level namespaces that are used to generate the client library.
    *
+   * @param namespace: If namespace param is given, we will return the children of the given namespace.
+   *
    */
-  listNamespaces(): Namespace[];
-
-  /**
-     * Get the namespaces below a given namespace that are used to generate the client library.
-     
-     * @param namespace namespace to get the children of
-     */
-  listSubNamespaces(namespace: Namespace): Namespace[];
+  listNamespaces(namespace?: Namespace): Namespace[];
 
   /**
    * List all of the clients in a given namespace.
    *
    * @param namespace namespace to get the clients of
    */
-  listClients(namespace: Namespace): Client[];
+  listClients(type: Namespace | Client): Client[];
 
   /**
    * List all of the models in a given namespace.
@@ -49,31 +51,75 @@ declare module "@typespec/compiler/typekit" {
 
 defineKit<Typekit>({
   clientLibrary: {
-    listNamespaces() {
-      return [...$.program.checker.getGlobalNamespaceType().namespaces.values()];
+    listNamespaces(namespace) {
+      if (namespace) {
+        return [...namespace.namespaces.values()];
+      }
+      return [...$.program.checker.getGlobalNamespaceType().namespaces.values()].filter(
+        (n) => getLocationContext($.program, n).type === "project",
+      );
     },
-    listSubNamespaces(namespace) {
-      return [...namespace.namespaces.values()];
-    },
-    listClients(namespace) {
+    listClients(type) {
       // if there is no explicit client, we will treat namespaces with service decorator as clients
-      const services = listServices(this.program);
-      const clients: Client[] = services
-        .filter((x) => x.type === namespace)
-        .map((service) => {
-          const clientName = this.client.getName(service.type);
+      function getClientName(name: string): string {
+        return name.endsWith("Client") ? name : `${name}Client`;
+      }
+      if (type.kind === "Client") {
+        const clientType = type.type;
+        const clientIsNamespace = clientType.kind === "Namespace";
+        if (!clientIsNamespace) {
+          return [];
+        }
+        const subnamespaces: (Namespace | Interface)[] = [
+          ...$.clientLibrary.listNamespaces(clientType),
+          ...clientType.interfaces.values(),
+        ];
+        return subnamespaces.map((sn) => {
           return {
             kind: "Client",
-            name: clientName,
+            name: getClientName(sn.name),
+            service: sn,
+            type: sn,
+          } as Client;
+        });
+      }
+      return listServices($.program)
+        .filter((i) => i.type === type)
+        .map((service) => {
+          return {
+            kind: "Client",
+            name: getClientName(service.type.name),
             service: service.type,
             type: service.type,
           };
         });
-
-      return clients;
     },
     listModels(namespace) {
-      return [...namespace.models.values()];
+      const allModels = [...namespace.models.values()];
+      const modelsMap: Map<string, Model> = new Map();
+      for (const op of namespace.operations.values()) {
+        for (const param of op.parameters.properties.values()) {
+          if (param.type.kind === "Model" && allModels.includes(param.type)) {
+            modelsMap.set(param.type.name, param.type);
+            for (const prop of param.type.properties.values()) {
+              if (
+                prop.type.kind === "Model" &&
+                allModels.includes(prop.type) &&
+                !modelsMap.has(prop.type.name)
+              ) {
+                modelsMap.set(prop.type.name, prop.type);
+              }
+            }
+          }
+          if (
+            param.sourceProperty?.type.kind === "Model" &&
+            allModels.includes(param.sourceProperty?.type)
+          ) {
+            modelsMap.set(param.sourceProperty?.type.name, param.sourceProperty?.type);
+          }
+        }
+      }
+      return [...modelsMap.values()];
     },
     listEnums(namespace) {
       return [...namespace.enums.values()];
