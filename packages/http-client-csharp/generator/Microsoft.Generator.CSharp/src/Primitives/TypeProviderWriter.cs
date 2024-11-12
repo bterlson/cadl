@@ -22,7 +22,7 @@ namespace Microsoft.Generator.CSharp.Primitives
             {
                 WriteType(writer);
             }
-            return new CodeFile(writer.ToString(), _provider.RelativeFilePath);
+            return new CodeFile(writer.ToString(true, CodeModelPlugin.Instance.Configuration.UseAlloy), _provider.RelativeFilePath);
         }
 
         private bool IsPublicContext(TypeProvider provider)

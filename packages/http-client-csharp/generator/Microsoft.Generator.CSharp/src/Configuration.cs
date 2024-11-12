@@ -197,6 +197,8 @@ namespace Microsoft.Generator.CSharp
         /// </summary>
         internal bool UseModelNamespace { get; private set; }
 
+        internal bool UseAlloy { get; set; }
+
         /// <summary>
         /// Initializes the configuration from the given path to the configuration file.
         /// </summary>

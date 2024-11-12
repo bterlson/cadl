@@ -18,7 +18,7 @@ namespace UnbrandedTypeSpec
 
         public static string ToString(DateTime value, string format) => value.Kind switch
         {
-            DateTimeKind.Utc => ToString((DateTimeOffset)value, format),
+            DateTimeKind.Utc => TypeFormatters.ToString(((DateTimeOffset)value), format),
             _ => throw new NotSupportedException($"DateTime {value} has a Kind of {value.Kind}. Generated clients require it to be UTC. You can call DateTime.SpecifyKind to change Kind property value to DateTimeKind.Utc.")
         };
 
@@ -34,42 +34,42 @@ namespace UnbrandedTypeSpec
 
         public static string ToString(TimeSpan value, string format) => format switch
         {
-            "P" => System.Xml.XmlConvert.ToString(value),
+            "P" => XmlConvert.ToString(value),
             _ => value.ToString(format, CultureInfo.InvariantCulture)
         };
 
-        public static string ToString(byte[] value, string format) => format switch
+        public static string ToString(Byte[] value, string format) => format switch
         {
-            "U" => ToBase64UrlString(value),
+            "U" => TypeFormatters.ToBase64UrlString(value),
             "D" => Convert.ToBase64String(value),
             _ => throw new ArgumentException($"Format is not supported: '{format}'", nameof(format))
         };
 
-        public static string ToBase64UrlString(byte[] value)
+        public static string ToBase64UrlString(Byte[] value)
         {
-            int numWholeOrPartialInputBlocks = checked (value.Length + 2) / 3;
+            int numWholeOrPartialInputBlocks = (checked (value.Length + 2) / 3);
             int size = checked (numWholeOrPartialInputBlocks * 4);
-            char[] output = new char[size];
+            Char[] output = new char[size];
 
             int numBase64Chars = Convert.ToBase64CharArray(value, 0, value.Length, output, 0);
 
             int i = 0;
-            for (; i < numBase64Chars; i++)
+            for (; (i < numBase64Chars); i++)
             {
                 char ch = output[i];
-                if (ch == '+')
+                if ((ch == '+'))
                 {
                     output[i] = '-';
                 }
                 else
                 {
-                    if (ch == '/')
+                    if ((ch == '/'))
                     {
                         output[i] = '_';
                     }
                     else
                     {
-                        if (ch == '=')
+                        if ((ch == '='))
                         {
                             break;
                         }
@@ -80,7 +80,7 @@ namespace UnbrandedTypeSpec
             return new string(output, 0, i);
         }
 
-        public static byte[] FromBase64UrlString(string value)
+        public static Byte[] FromBase64UrlString(string value)
         {
             int paddingCharsToAdd = (value.Length % 4) switch
             {
@@ -89,18 +89,18 @@ namespace UnbrandedTypeSpec
                 3 => 1,
                 _ => throw new InvalidOperationException("Malformed input")
             };
-            char[] output = new char[(value.Length + paddingCharsToAdd)];
+            Char[] output = new char[(value.Length + paddingCharsToAdd)];
             int i = 0;
-            for (; i < value.Length; i++)
+            for (; (i < value.Length); i++)
             {
                 char ch = value[i];
-                if (ch == '-')
+                if ((ch == '-'))
                 {
                     output[i] = '+';
                 }
                 else
                 {
-                    if (ch == '_')
+                    if ((ch == '_'))
                     {
                         output[i] = '/';
                     }
@@ -111,7 +111,7 @@ namespace UnbrandedTypeSpec
                 }
             }
 
-            for (; i < output.Length; i++)
+            for (; (i < output.Length); i++)
             {
                 output[i] = '=';
             }
@@ -127,23 +127,23 @@ namespace UnbrandedTypeSpec
 
         public static TimeSpan ParseTimeSpan(string value, string format) => format switch
         {
-            "P" => System.Xml.XmlConvert.ToTimeSpan(value),
+            "P" => XmlConvert.ToTimeSpan(value),
             _ => TimeSpan.ParseExact(value, format, CultureInfo.InvariantCulture)
         };
 
-        public static string ConvertToString(object value, string format = null) => value switch
+        public static string ConvertToString(object value, string format = ((string)null)) => value switch
         {
             null => "null",
             string s => s,
-            bool b => ToString(b),
-            int  or  float  or  double  or  long  or  decimal => ((IFormattable)value).ToString(DefaultNumberFormat, CultureInfo.InvariantCulture),
-            byte[] b0 when format != null => ToString(b0, format),
+            bool b => TypeFormatters.ToString(b),
+            (int  or  (float  or  (double  or  (long  or  decimal)))) => ((IFormattable)value).ToString(DefaultNumberFormat, CultureInfo.InvariantCulture),
+            Byte[] b0 when (format != null) => TypeFormatters.ToString(b0, format),
             IEnumerable<string> s0 => string.Join(",", s0),
-            DateTimeOffset dateTime when format != null => ToString(dateTime, format),
-            TimeSpan timeSpan when format != null => ToString(timeSpan, format),
-            TimeSpan timeSpan0 => System.Xml.XmlConvert.ToString(timeSpan0),
+            DateTimeOffset dateTime when (format != null) => TypeFormatters.ToString(dateTime, format),
+            TimeSpan timeSpan when (format != null) => TypeFormatters.ToString(timeSpan, format),
+            TimeSpan timeSpan0 => XmlConvert.ToString(timeSpan0),
             Guid guid => guid.ToString(),
-            BinaryData binaryData => ConvertToString(binaryData.ToArray(), format),
+            BinaryData binaryData => TypeFormatters.ConvertToString(binaryData.ToArray(), format),
             _ => value.ToString()
         };
     }

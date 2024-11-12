@@ -33,6 +33,7 @@ export interface NetEmitterOptions extends SdkEmitterOptions {
   "disable-xml-docs"?: boolean;
   "plugin-name"?: string;
   "emitter-extension-path"?: string;
+  "use-alloy"?: boolean;
 }
 
 export const NetEmitterOptionsSchema: JSONSchemaType<NetEmitterOptions> = {
@@ -109,6 +110,7 @@ export const NetEmitterOptionsSchema: JSONSchemaType<NetEmitterOptions> = {
     "disable-xml-docs": { type: "boolean", nullable: true },
     "plugin-name": { type: "string", nullable: true },
     "emitter-extension-path": { type: "string", nullable: true },
+    "use-alloy": { type: "boolean", nullable: true },
   },
   required: [],
 };
@@ -135,6 +137,7 @@ export const defaultOptions = {
   "generate-test-project": false,
   "plugin-name": "ClientModelPlugin",
   "emitter-extension-path": undefined,
+  "use-alloy": false,
 };
 
 export function resolveOptions(context: EmitContext<NetEmitterOptions>) {

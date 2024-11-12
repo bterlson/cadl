@@ -40,11 +40,11 @@ namespace UnbrandedTypeSpec.Models
         public static implicit operator ThingOptionalLiteralInt(int value) => new ThingOptionalLiteralInt(value);
 
         /// <param name="obj"> The object to compare. </param>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public override bool Equals(object obj) => obj is ThingOptionalLiteralInt other && Equals(other);
+        [EditorBrowsableAttribute(EditorBrowsableState.Never)]
+        public override bool Equals(object obj) => ((obj is ThingOptionalLiteralInt other) && this.Equals(other));
 
         /// <param name="other"> The instance to compare. </param>
-        public bool Equals(ThingOptionalLiteralInt other) => Equals(_value, other._value);
+        public bool Equals(ThingOptionalLiteralInt other) => int.Equals(_value, other._value);
 
         /// <inheritdoc/>
         public override int GetHashCode() => _value.GetHashCode();

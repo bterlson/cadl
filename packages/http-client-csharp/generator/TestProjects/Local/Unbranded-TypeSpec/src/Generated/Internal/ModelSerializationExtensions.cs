@@ -57,9 +57,9 @@ namespace UnbrandedTypeSpec
             }
         }
 
-        public static byte[] GetBytesFromBase64(this JsonElement element, string format)
+        public static Byte[] GetBytesFromBase64(this JsonElement element, string format)
         {
-            if (element.ValueKind == JsonValueKind.Null)
+            if ((element.ValueKind == JsonValueKind.Null))
             {
                 return null;
             }
@@ -74,7 +74,7 @@ namespace UnbrandedTypeSpec
 
         public static DateTimeOffset GetDateTimeOffset(this JsonElement element, string format) => format switch
         {
-            "U" when element.ValueKind == JsonValueKind.Number => DateTimeOffset.FromUnixTimeSeconds(element.GetInt64()),
+            "U" when (element.ValueKind == JsonValueKind.Number) => DateTimeOffset.FromUnixTimeSeconds(element.GetInt64()),
             _ => TypeFormatters.ParseDateTimeOffset(element.GetString(), format)
         };
 
@@ -82,10 +82,10 @@ namespace UnbrandedTypeSpec
 
         public static char GetChar(this JsonElement element)
         {
-            if (element.ValueKind == JsonValueKind.String)
+            if ((element.ValueKind == JsonValueKind.String))
             {
                 string text = element.GetString();
-                if (text == null || text.Length != 1)
+                if (((text == null) || (text.Length != 1)))
                 {
                     throw new NotSupportedException($"Cannot convert \"{text}\" to a char");
                 }
@@ -97,7 +97,7 @@ namespace UnbrandedTypeSpec
             }
         }
 
-        [Conditional("DEBUG")]
+        [ConditionalAttribute("DEBUG")]
         public static void ThrowNonNullablePropertyIsNull(this JsonProperty @property)
         {
             throw new JsonException($"A property '{@property.Name}' defined as non-nullable but received as null from the service. This exception only happens in DEBUG builds of the library and would be ignored in the release build");
@@ -106,7 +106,7 @@ namespace UnbrandedTypeSpec
         public static string GetRequiredString(this JsonElement element)
         {
             string value = element.GetString();
-            if (value == null)
+            if ((value == null))
             {
                 throw new InvalidOperationException($"The requested operation requires an element of type 'String', but the target element has type '{element.ValueKind}'.");
             }
@@ -133,9 +133,9 @@ namespace UnbrandedTypeSpec
             writer.WriteStringValue(value.ToString(CultureInfo.InvariantCulture));
         }
 
-        public static void WriteBase64StringValue(this Utf8JsonWriter writer, byte[] value, string format)
+        public static void WriteBase64StringValue(this Utf8JsonWriter writer, Byte[] value, string format)
         {
-            if (value == null)
+            if ((value == null))
             {
                 writer.WriteNullValue();
                 return;
@@ -155,14 +155,14 @@ namespace UnbrandedTypeSpec
 
         public static void WriteNumberValue(this Utf8JsonWriter writer, DateTimeOffset value, string format)
         {
-            if (format != "U")
+            if ((format != "U"))
             {
                 throw new ArgumentOutOfRangeException(nameof(format), "Only 'U' format is supported when writing a DateTimeOffset as a Number.");
             }
             writer.WriteNumberValue(value.ToUnixTimeSeconds());
         }
 
-        public static void WriteObjectValue<T>(this Utf8JsonWriter writer, T value, ModelReaderWriterOptions options = null)
+        public static void WriteObjectValue<T>(this Utf8JsonWriter writer, T value, ModelReaderWriterOptions options = ((ModelReaderWriterOptions)null))
         {
             switch (value)
             {
@@ -170,9 +170,9 @@ namespace UnbrandedTypeSpec
                     writer.WriteNullValue();
                     break;
                 case IJsonModel<T> jsonModel:
-                    jsonModel.Write(writer, options ?? WireOptions);
+                    jsonModel.Write(writer, (options ?? ModelSerializationExtensions.WireOptions));
                     break;
-                case byte[] bytes:
+                case Byte[] bytes:
                     writer.WriteBase64StringValue(bytes);
                     break;
                 case BinaryData bytes0:
@@ -243,7 +243,7 @@ namespace UnbrandedTypeSpec
             }
         }
 
-        public static void WriteObjectValue(this Utf8JsonWriter writer, object value, ModelReaderWriterOptions options = null)
+        public static void WriteObjectValue(this Utf8JsonWriter writer, object value, ModelReaderWriterOptions options = ((ModelReaderWriterOptions)null))
         {
             writer.WriteObjectValue<object>(value, options);
         }

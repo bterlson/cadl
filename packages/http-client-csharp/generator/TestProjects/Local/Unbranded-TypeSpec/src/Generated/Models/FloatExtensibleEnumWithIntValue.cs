@@ -47,11 +47,11 @@ namespace UnbrandedTypeSpec.Models
         public static implicit operator FloatExtensibleEnumWithIntValue(float value) => new FloatExtensibleEnumWithIntValue(value);
 
         /// <param name="obj"> The object to compare. </param>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public override bool Equals(object obj) => obj is FloatExtensibleEnumWithIntValue other && Equals(other);
+        [EditorBrowsableAttribute(EditorBrowsableState.Never)]
+        public override bool Equals(object obj) => ((obj is FloatExtensibleEnumWithIntValue other) && this.Equals(other));
 
         /// <param name="other"> The instance to compare. </param>
-        public bool Equals(FloatExtensibleEnumWithIntValue other) => Equals(_value, other._value);
+        public bool Equals(FloatExtensibleEnumWithIntValue other) => float.Equals(_value, other._value);
 
         /// <inheritdoc/>
         public override int GetHashCode() => _value.GetHashCode();

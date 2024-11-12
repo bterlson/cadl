@@ -7,7 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Generator.CSharp.Primitives;
-using Microsoft.Generator.CSharp.SourceInput;
+using Microsoft.Generator.CSharp.Writers;
 
 namespace Microsoft.Generator.CSharp
 {
@@ -21,7 +21,7 @@ namespace Microsoft.Generator.CSharp
         /// <summary>
         /// Executes the generator task with the <see cref="CodeModelPlugin"/> instance.
         /// </summary>
-        public async Task ExecuteAsync()
+        public async Task ExecuteAsync(CommandLineOptions? options = default)
         {
             GeneratedCodeWorkspace.Initialize();
             var outputPath = CodeModelPlugin.Instance.Configuration.OutputDirectory;
@@ -32,8 +32,6 @@ namespace Microsoft.Generator.CSharp
             await CodeModelPlugin.Instance.InitializeSourceInputModelAsync();
 
             var output = CodeModelPlugin.Instance.OutputLibrary;
-            Directory.CreateDirectory(Path.Combine(generatedSourceOutputPath, "Models"));
-            List<Task> generateFilesTasks = new();
 
             // visit the entire library before generating files
             foreach (var visitor in CodeModelPlugin.Instance.Visitors)
@@ -41,6 +39,20 @@ namespace Microsoft.Generator.CSharp
                 visitor.Visit(output);
             }
 
+            if (options?.UseAlloy == true)
+            {
+                AlloyComponentWriter.Write(output, outputPath);
+            }
+            else
+            {
+                await WriteCsFiles(outputPath, generatedSourceOutputPath, generatedTestOutputPath, workspace, output);
+            }
+        }
+
+        private static async Task WriteCsFiles(string outputPath, string generatedSourceOutputPath, string generatedTestOutputPath, GeneratedCodeWorkspace workspace, OutputLibrary output)
+        {
+            Directory.CreateDirectory(Path.Combine(generatedSourceOutputPath, "Models"));
+            List<Task> generateFilesTasks = new();
             foreach (var outputType in output.TypeProviders)
             {
                 var writer = CodeModelPlugin.Instance.GetWriter(outputType);

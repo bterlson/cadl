@@ -11,8 +11,10 @@ import {
   resolvePath,
 } from "@typespec/compiler";
 
+import { Declaration, Output, Scope, SourceDirectory, SourceFile } from "@alloy-js/core/stc";
 import { spawn, SpawnOptions } from "child_process";
 import fs, { statSync } from "fs";
+import fsP from "fs/promises";
 import { PreserveType, stringifyRefs } from "json-serialize-refs";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
@@ -51,6 +53,7 @@ export async function $onEmit(context: EmitContext<NetEmitterOptions>) {
 
   /* set the loglevel. */
   Logger.initialize(program, options.logLevel ?? LoggerLevel.INFO);
+  let output;
 
   if (!program.compilerOptions.noEmit && !program.hasError()) {
     // Write out the dotnet model to the output path
@@ -147,6 +150,8 @@ export async function $onEmit(context: EmitContext<NetEmitterOptions>) {
           projectRoot + "/dist/generator/Microsoft.Generator.CSharp.dll",
         );
 
+        const alloyFlag = options["use-alloy"] ? "-a" : "";
+
         const command = `dotnet --roll-forward Major ${generatorPath} ${outputFolder} -p ${options["plugin-name"]}${constructCommandArg(newProjectOption)}${constructCommandArg(existingProjectOption)}${constructCommandArg(debugFlag)}`;
         Logger.getInstance().info(command);
 
@@ -162,6 +167,7 @@ export async function $onEmit(context: EmitContext<NetEmitterOptions>) {
             newProjectOption,
             existingProjectOption,
             debugFlag,
+            alloyFlag,
           ],
           { stdio: "inherit" },
         );
@@ -170,6 +176,15 @@ export async function $onEmit(context: EmitContext<NetEmitterOptions>) {
           if (result.stdout) Logger.getInstance().verbose(result.stdout);
           throw new Error(`Failed to generate SDK. Exit code: ${result.exitCode}`);
         }
+
+        if (options["use-alloy"]) {
+          const alloyFile = resolvePath(outputFolder, "domain-specific-metadata.json");
+
+          const data = await fsP.readFile(alloyFile, { encoding: "utf8" });
+          const json = JSON.parse(data);
+          output = Output().children(Directories({ directories: json.directories }));
+        }
+
         if (!options["save-inputs"]) {
           // delete
           deleteFile(resolvePath(outputFolder, tspOutputFileName));
@@ -178,6 +193,30 @@ export async function $onEmit(context: EmitContext<NetEmitterOptions>) {
       }
     }
   }
+
+  return output;
+}
+
+function Directories(props: { directories: any[] }) {
+  return props.directories.map((directory) => Directory({ directory }));
+}
+
+function Directory(props: { directory: any }) {
+  return SourceDirectory({ path: props.directory.name }).children(
+    Files({ files: props.directory.files }),
+  );
+}
+
+function Files(props: { files: any[] }) {
+  return props.files.map((file) =>
+    SourceFile({ filetype: "cs", path: file.name }).children(File({ file })),
+  );
+}
+
+function File(props: { file: any }) {
+  return Scope({ name: props.file.typeDeclaration.name }).children(
+    Declaration(props.file.typeDeclaration.name).children(props.file.typeDeclaration.content),
+  );
 }
 
 function constructCommandArg(arg: string): string {

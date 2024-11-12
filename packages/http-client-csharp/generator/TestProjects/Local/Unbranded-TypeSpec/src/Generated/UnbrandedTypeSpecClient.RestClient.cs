@@ -34,7 +34,7 @@ namespace UnbrandedTypeSpec
             uri.Reset(_endpoint);
             uri.AppendPath("/hello", false);
             uri.AppendQuery("queryParameter", queryParameter, true);
-            if (optionalQuery != null)
+            if ((optionalQuery != null))
             {
                 uri.AppendQuery("optionalQuery", optionalQuery, true);
             }
@@ -344,14 +344,14 @@ namespace UnbrandedTypeSpec
             public override bool TryClassify(PipelineMessage message, out bool isError)
             {
                 isError = false;
-                if (message.Response == null)
+                if ((message.Response == null))
                 {
                     return false;
                 }
                 isError = message.Response.Status switch
                 {
-                    >= 200 and < 300 => false,
-                    >= 400 and < 500 => false,
+                    ((>= 200) and (< 300)) => false,
+                    ((>= 400) and (< 500)) => false,
                     _ => true
                 };
                 return true;

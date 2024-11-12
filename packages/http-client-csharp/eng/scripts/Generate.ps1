@@ -2,7 +2,8 @@
 param(
     $filter,
     [bool]$Stubbed = $true,
-    [bool]$LaunchOnly = $false
+    [bool]$LaunchOnly = $false,
+    [bool]$UseAlloy = $false
 )
 
 Import-Module "$PSScriptRoot\Generation.psm1" -DisableNameChecking -Force;
@@ -20,7 +21,7 @@ if (-not $LaunchOnly) {
         $unbrandedTypespecTestProject = Join-Path $testProjectsLocalDir "Unbranded-TypeSpec"
         $unbrandedTypespecTestProject = $unbrandedTypespecTestProject
 
-        Invoke (Get-TspCommand "$unbrandedTypespecTestProject/Unbranded-TypeSpec.tsp" $unbrandedTypespecTestProject)
+        Invoke (Get-TspCommand "$unbrandedTypespecTestProject/Unbranded-TypeSpec.tsp" $unbrandedTypespecTestProject -useAlloy $UseAlloy)
 
         # exit if the generation failed
         if ($LASTEXITCODE -ne 0) {

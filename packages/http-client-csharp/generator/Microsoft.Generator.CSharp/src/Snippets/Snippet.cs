@@ -41,7 +41,7 @@ namespace Microsoft.Generator.CSharp.Snippets
 
         public static ValueExpression Dash { get; } = new KeywordExpression("_", null);
 
-        public static ValueExpression DefaultOf(CSharpType type) => type is { IsValueType: true, IsNullable: false } ? Default.CastTo(type) : Null.CastTo(type);
+        public static ValueExpression DefaultOf(CSharpType type) => type is { IsValueType: true, IsNullable: false } ? Default : Null.CastTo(type);
 
         public static ValueExpression Value { get; } = new KeywordExpression("value", null);
         public static ValueExpression Default { get; } = new KeywordExpression("default", null);

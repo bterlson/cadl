@@ -24,7 +24,8 @@ function Get-TspCommand {
     param (
         [string]$specFile,
         [string]$generationDir,
-        [bool]$generateStub = $false
+        [bool]$generateStub = $false,
+        [bool]$useAlloy = $false
     )
     $command = "npx tsp compile $specFile"
     $command += " --trace @typespec/http-client-csharp"
@@ -37,6 +38,9 @@ function Get-TspCommand {
     $command += " --option @typespec/http-client-csharp.save-inputs=true"
     if ($generateStub) {
         $command += " --option @typespec/http-client-csharp.plugin-name=StubLibraryPlugin"
+    }
+    if ($useAlloy) {
+        $command += " --option @typespec/http-client-csharp.use-alloy=true"
     }
     return $command
 }

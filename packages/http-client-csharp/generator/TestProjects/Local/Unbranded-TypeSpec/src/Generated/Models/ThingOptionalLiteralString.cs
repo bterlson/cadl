@@ -43,14 +43,14 @@ namespace UnbrandedTypeSpec.Models
         public static implicit operator ThingOptionalLiteralString(string value) => new ThingOptionalLiteralString(value);
 
         /// <param name="obj"> The object to compare. </param>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public override bool Equals(object obj) => obj is ThingOptionalLiteralString other && Equals(other);
+        [EditorBrowsableAttribute(EditorBrowsableState.Never)]
+        public override bool Equals(object obj) => ((obj is ThingOptionalLiteralString other) && this.Equals(other));
 
         /// <param name="other"> The instance to compare. </param>
         public bool Equals(ThingOptionalLiteralString other) => string.Equals(_value, other._value, StringComparison.InvariantCultureIgnoreCase);
 
         /// <inheritdoc/>
-        public override int GetHashCode() => _value != null ? StringComparer.InvariantCultureIgnoreCase.GetHashCode(_value) : 0;
+        public override int GetHashCode() => (_value != null) ? StringComparer.InvariantCultureIgnoreCase.GetHashCode(_value) : 0;
 
         /// <inheritdoc/>
         public override string ToString() => _value;

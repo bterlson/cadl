@@ -19,11 +19,11 @@ namespace UnbrandedTypeSpec
         {
         }
 
-        private UriBuilder UriBuilder => _uriBuilder  ??=  new UriBuilder();
+        private UriBuilder UriBuilder => (_uriBuilder  ??=  new UriBuilder());
 
-        private StringBuilder PathBuilder => _pathBuilder  ??=  new StringBuilder(UriBuilder.Path);
+        private StringBuilder PathBuilder => (_pathBuilder  ??=  new StringBuilder(UriBuilder.Path));
 
-        private StringBuilder QueryBuilder => _queryBuilder  ??=  new StringBuilder(UriBuilder.Query);
+        private StringBuilder QueryBuilder => (_queryBuilder  ??=  new StringBuilder(UriBuilder.Query));
 
         public void Reset(Uri uri)
         {
@@ -38,9 +38,9 @@ namespace UnbrandedTypeSpec
             {
                 value = Uri.EscapeDataString(value);
             }
-            if (PathBuilder.Length > 0 && PathBuilder[PathBuilder.Length - 1] == '/' && value[0] == '/')
+            if ((((PathBuilder.Length > 0) && (PathBuilder[(PathBuilder.Length - 1)] == '/')) && (value[0] == '/')))
             {
-                PathBuilder.Remove(PathBuilder.Length - 1, 1);
+                PathBuilder.Remove((PathBuilder.Length - 1), 1);
             }
             PathBuilder.Append(value);
             UriBuilder.Path = PathBuilder.ToString();
@@ -54,7 +54,7 @@ namespace UnbrandedTypeSpec
 
         public void AppendPath(int value, bool escape = true) => AppendPath(TypeFormatters.ConvertToString(value), escape);
 
-        public void AppendPath(byte[] value, string format, bool escape = true) => AppendPath(TypeFormatters.ConvertToString(value, format), escape);
+        public void AppendPath(Byte[] value, string format, bool escape = true) => AppendPath(TypeFormatters.ConvertToString(value, format), escape);
 
         public void AppendPath(IEnumerable<string> value, bool escape = true) => AppendPath(TypeFormatters.ConvertToString(value), escape);
 
@@ -68,7 +68,7 @@ namespace UnbrandedTypeSpec
 
         public void AppendQuery(string name, string value, bool escape)
         {
-            if (QueryBuilder.Length > 0)
+            if ((QueryBuilder.Length > 0))
             {
                 QueryBuilder.Append('&');
             }
@@ -99,17 +99,17 @@ namespace UnbrandedTypeSpec
 
         public void AppendQuery(string name, TimeSpan value, bool escape = true) => AppendQuery(name, TypeFormatters.ConvertToString(value), escape);
 
-        public void AppendQuery(string name, byte[] value, string format, bool escape = true) => AppendQuery(name, TypeFormatters.ConvertToString(value, format), escape);
+        public void AppendQuery(string name, Byte[] value, string format, bool escape = true) => AppendQuery(name, TypeFormatters.ConvertToString(value, format), escape);
 
         public void AppendQuery(string name, Guid value, bool escape = true) => AppendQuery(name, TypeFormatters.ConvertToString(value), escape);
 
         public Uri ToUri()
         {
-            if (_pathBuilder != null)
+            if ((_pathBuilder != null))
             {
                 UriBuilder.Path = _pathBuilder.ToString();
             }
-            if (_queryBuilder != null)
+            if ((_queryBuilder != null))
             {
                 UriBuilder.Query = _queryBuilder.ToString();
             }

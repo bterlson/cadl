@@ -12,7 +12,7 @@ namespace UnbrandedTypeSpec
     {
         public static void AssertNotNull<T>(T value, string name)
         {
-            if (value is null)
+            if ((value is null))
             {
                 throw new ArgumentNullException(name);
             }
@@ -29,15 +29,15 @@ namespace UnbrandedTypeSpec
 
         public static void AssertNotNullOrEmpty<T>(IEnumerable<T> value, string name)
         {
-            if (value is null)
+            if ((value is null))
             {
                 throw new ArgumentNullException(name);
             }
-            if (value is ICollection<T> collectionOfT && collectionOfT.Count == 0)
+            if (((value is ICollection<T> collectionOfT) && (collectionOfT.Count == 0)))
             {
                 throw new ArgumentException("Value cannot be an empty collection.", name);
             }
-            if (value is ICollection collection && collection.Count == 0)
+            if (((value is ICollection collection) && (collection.Count == 0)))
             {
                 throw new ArgumentException("Value cannot be an empty collection.", name);
             }
@@ -50,11 +50,11 @@ namespace UnbrandedTypeSpec
 
         public static void AssertNotNullOrEmpty(string value, string name)
         {
-            if (value is null)
+            if ((value is null))
             {
                 throw new ArgumentNullException(name);
             }
-            if (value.Length == 0)
+            if ((value.Length == 0))
             {
                 throw new ArgumentException("Value cannot be an empty string.", name);
             }
@@ -62,7 +62,7 @@ namespace UnbrandedTypeSpec
 
         public static void AssertNotNullOrWhiteSpace(string value, string name)
         {
-            if (value is null)
+            if ((value is null))
             {
                 throw new ArgumentNullException(name);
             }
@@ -84,11 +84,11 @@ namespace UnbrandedTypeSpec
         public static void AssertInRange<T>(T value, T minimum, T maximum, string name)
             where T : notnull, IComparable<T> 
         {
-            if (minimum.CompareTo(value) > 0)
+            if ((minimum.CompareTo(value) > 0))
             {
                 throw new ArgumentOutOfRangeException(name, "Value is less than the minimum allowed.");
             }
-            if (maximum.CompareTo(value) < 0)
+            if ((maximum.CompareTo(value) < 0))
             {
                 throw new ArgumentOutOfRangeException(name, "Value is greater than the maximum allowed.");
             }
@@ -105,21 +105,21 @@ namespace UnbrandedTypeSpec
         public static T CheckNotNull<T>(T value, string name)
             where T : class 
         {
-            AssertNotNull(value, name);
+            Argument.AssertNotNull(value, name);
             return value;
         }
 
         public static string CheckNotNullOrEmpty(string value, string name)
         {
-            AssertNotNullOrEmpty(value, name);
+            Argument.AssertNotNullOrEmpty(value, name);
             return value;
         }
 
-        public static void AssertNull<T>(T value, string name, string message = null)
+        public static void AssertNull<T>(T value, string name, string message = ((string)null))
         {
-            if (value != null)
+            if ((value != null))
             {
-                throw new ArgumentException(message ?? "Value must be null.", name);
+                throw new ArgumentException((message ?? "Value must be null."), name);
             }
         }
     }

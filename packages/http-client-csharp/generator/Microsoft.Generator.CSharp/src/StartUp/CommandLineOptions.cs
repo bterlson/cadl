@@ -35,5 +35,8 @@ namespace Microsoft.Generator.CSharp
 
         [Option(longName: NewProjectOptionName, shortName: 'n', Required = false, Default = false, Hidden = false, HelpText = CmdLineNewProjectOptionHelpText)]
         public bool IsNewProject { get; set; }
+
+        [Option(longName: "use-alloy", shortName: 'a', Required = false, Default = false, Hidden = true)]
+        public bool UseAlloy { get; set; }
     }
 }

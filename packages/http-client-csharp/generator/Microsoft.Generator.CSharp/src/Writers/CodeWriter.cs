@@ -20,7 +20,7 @@ namespace Microsoft.Generator.CSharp
         private const char _newLine = '\n';
         private const char _space = ' ';
 
-        private readonly HashSet<string> _usingNamespaces = new HashSet<string>();
+        private readonly HashSet<string> _usingNamespaces = [];
 
         private readonly Stack<CodeScope> _scopes;
         private string? _currentNamespace;
@@ -28,6 +28,7 @@ namespace Microsoft.Generator.CSharp
         private bool _atBeginningOfLine;
         private bool _writingXmlDocumentation;
         private bool _writingNewInstance;
+        private HashSet<string> _types = [];
 
         internal CodeWriter()
         {
@@ -577,12 +578,10 @@ namespace Microsoft.Generator.CSharp
             {
                 UseNamespace(type.Namespace);
 
-                AppendRaw("global::");
-                AppendRaw(type.Namespace);
-                AppendRaw(".");
-                if (type.DeclaringType is not null)
-                    AppendRaw($"{type.DeclaringType.Name}.");
-                AppendRaw(type.Name);
+                var declaringTypeStr = type.DeclaringType is not null ? $"{type.DeclaringType.Name}." : string.Empty;
+                var typeName = $"global::{type.Namespace}.{declaringTypeStr}{type.Name}";
+                _types.Add(type.Arguments.Count > 0 ? $"{typeName}`{type.Arguments.Count}" : typeName);
+                AppendRaw($"{typeName}$$$");
             }
 
             if (type.Arguments.Any())
@@ -847,7 +846,7 @@ namespace Microsoft.Generator.CSharp
             return ToString(true);
         }
 
-        public string ToString(bool header)
+        public string ToString(bool header, bool reduce = false)
         {
             var reader = _builder.ExtractReader();
             var totalLength = reader.Length;
@@ -885,7 +884,7 @@ namespace Microsoft.Generator.CSharp
                 }
             }
 
-            reader.CopyTo(builder, default);
+            reader.CopyTo(builder, reduce, namespaces, _types, default);
             return builder.ToString();
         }
 
