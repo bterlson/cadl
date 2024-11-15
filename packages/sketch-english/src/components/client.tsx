@@ -8,16 +8,4 @@ interface ClientProps {
 }
 
 export function EnglishClient(props: ClientProps) {
-  const constructor = $.client.getConstructor(props.client);
-  return (
-    <ay.SourceFile path={props.client.name} filetype="txt">
-      Hello, I am client "{props.client.name}"
-      <ay.Indent>
-        <EnglishOperation client={props.client} operation={constructor} />
-        {ay.mapJoin($.client.listServiceOperations(props.client), (operation) => (
-          <EnglishOperation client={props.client} operation={operation} />
-        ))}
-      </ay.Indent>
-    </ay.SourceFile>
-  );
 }
