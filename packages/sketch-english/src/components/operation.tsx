@@ -10,4 +10,15 @@ interface OperationProps {
 }
 
 export function EnglishOperation(props: OperationProps) {
+  $.client.getConstructor(props.client);
+  return (
+    <>
+    Hello, I am operation "{props.operation.name}"!
+    <ay.Indent>
+      {ay.mapJoin($.operation.getClientSignature(props.client, props.operation), (prop) => {
+        return `"${prop.name}" is a "${getEnglishTypeName(prop.type)}"`
+      })}
+    </ay.Indent>
+    </>
+  )
 }
